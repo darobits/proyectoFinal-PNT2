@@ -1,0 +1,56 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Daro",
+      "email": "daro@test.com",
+      "password": "$2b$10$LeD9ZP44J9cZ0lUtBlRCl.T/lJ6tcSHyXPy3tfExBLRCTBVHej5z.",
+      "role": "USER",
+      "age": null,
+      "height": null,
+      "currentWeight": null,
+      "goal": "",
+      "bio": ""
+    },
+    {
+      "id": 2,
+      "name": "Rena",
+      "email": "Rena@test.com",
+      "password": "$2b$10$RzzPH/NSqgZoWaOSjWdiC.8UVv8i.knQSNkGFz921oELGFkZ46JiW",
+      "role": "USER",
+      "age": null,
+      "height": null,
+      "currentWeight": null,
+      "goal": "",
+      "bio": ""
+    }
+  ],
+  "routines": [
+    {
+      "id": 1,
+      "title": "Full body novatos",
+      "description": "3 días por semana, todo el cuerpo",
+      "category": "Full body",
+      "level": "Principiante",
+      "creatorId": 1,
+      "collaboratorsIds": [
+        2
+      ],
+      "likedByIds": [
+        1
+      ],
+      "createdAt": "2025-11-21T21:27:32.288Z"
+    }
+  ],
+  "progress": [
+    {
+      "id": 1,
+      "userId": 1,
+      "year": 2025,
+      "month": 1,
+      "weight": 80,
+      "workoutsCount": 10,
+      "minutesTrained": 420
+    }
+  ]
+}
