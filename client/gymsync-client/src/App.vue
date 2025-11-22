@@ -1,8 +1,10 @@
+<!-- src/App.vue -->
 <script setup>
 import { RouterView, useRoute } from 'vue-router'
 import { computed } from 'vue'
 import { useStore } from 'vuex'
 import Sidebar from './components/Sidebar.vue'
+import Toast from './components/Toast.vue'
 import logo from './assets/gymsync-logo.png'
 
 const store = useStore()
@@ -41,5 +43,8 @@ const esRutaAuth = computed(() => route.name === 'Login' || route.name === 'Regi
         <RouterView />
       </div>
     </main>
+
+    <!-- 👇 Toast global flotante -->
+    <Toast />
   </div>
 </template>

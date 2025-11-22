@@ -22,6 +22,11 @@ const cargando = ref(false)
 const mensajeOk = ref('')
 const mensajeError = ref('')
 
+// 👉 helper para usar el toast global
+const showToast = (message, type = 'info') => {
+  store.commit('ui/showToast', { message, type })
+}
+
 const cargarRutinas = async () => {
   cargando.value = true
   mensajeError.value = ''
@@ -31,6 +36,7 @@ const cargarRutinas = async () => {
   } catch (e) {
     console.error(e)
     mensajeError.value = 'No se pudieron cargar las rutinas públicas.'
+    showToast('No se pudieron cargar las rutinas públicas.', 'error')
   } finally {
     cargando.value = false
   }
@@ -86,9 +92,16 @@ const toggleLike = async (routine) => {
       authConfig.value
     )
     replaceRoutine(data)
+    showToast(
+      hasLike(data)
+        ? 'Marcaste la rutina como favorita.'
+        : 'Quitaste la rutina de favoritos.',
+      'success'
+    )
   } catch (e) {
     console.error(e)
     mensajeError.value = 'No se pudo actualizar el favorito.'
+    showToast('No se pudo actualizar el favorito.', 'error')
   }
 }
 
@@ -99,15 +112,21 @@ const pedirColaborar = async (routine) => {
   const state = getCollabState(routine)
 
   if (state === 'owner') {
-    mensajeOk.value = 'Sos el creador de esta rutina.'
+    const msg = 'Sos el creador de esta rutina.'
+    mensajeOk.value = msg
+    showToast(msg, 'info')
     return
   }
   if (state === 'collab') {
-    mensajeOk.value = 'Ya sos colaborador de esta rutina.'
+    const msg = 'Ya sos colaborador de esta rutina.'
+    mensajeOk.value = msg
+    showToast(msg, 'success')
     return
   }
   if (state === 'pending') {
-    mensajeOk.value = 'Tu solicitud de colaboración está pendiente.'
+    const msg = 'Tu solicitud de colaboración está pendiente.'
+    mensajeOk.value = msg
+    showToast(msg, 'info')
     return
   }
 
@@ -118,11 +137,15 @@ const pedirColaborar = async (routine) => {
       authConfig.value
     )
     replaceRoutine(data)
-    mensajeOk.value = 'Solicitud de colaboración enviada.'
+    const msg = 'Solicitud de colaboración enviada al creador.'
+    mensajeOk.value = msg
+    showToast(msg, 'success')
   } catch (e) {
     console.error(e)
     const backendMsg = e?.response?.data?.error
-    mensajeError.value = backendMsg || 'No se pudo enviar la solicitud de colaboración.'
+    const msg = backendMsg || 'No se pudo enviar la solicitud de colaboración.'
+    mensajeError.value = msg
+    showToast(msg, 'error')
   }
 }
 

@@ -1,19 +1,23 @@
+// src/store/index.js
 import { createStore } from 'vuex'
 import auth from './modules/auth'
+import ui from './modules/ui'
+import toast from './modules/toast'   // 👈 NUEVO
 
 export default createStore({
-  modules: {
-    auth
-  },
   state: {
     sidebarVisible: true
   },
+
   mutations: {
     toggleSidebar(state) {
       state.sidebarVisible = !state.sidebarVisible
-    },
-    setSidebar(state, value) {
-      state.sidebarVisible = value
     }
+  },
+
+  modules: {
+    auth,
+    ui,
+    toast                     // 👈 REGISTRAMOS EL MÓDULO
   }
 })

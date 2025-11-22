@@ -2,8 +2,10 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import axios from 'axios'
+import { useToast } from '../composables/useToast'
 
 const store = useStore()
+const { showToast } = useToast()
 
 // instancia axios apuntando a tu backend Express
 const api = axios.create({
@@ -26,6 +28,10 @@ const error = ref(null)
 
 const modo = ref('crear') // 'crear' | 'editar'
 const usuarioEditandoId = ref(null)
+const confirmDeleteId = ref(null) // id del usuario al que se le pidió confirmación
+
+// NUEVO: controla si se muestra o no el formulario
+const mostrarForm = ref(false)
 
 const form = reactive({
   name: '',
@@ -69,11 +75,14 @@ const cargarUsuarios = async () => {
 
 const nuevoUsuario = () => {
   resetForm()
+  confirmDeleteId.value = null
+  mostrarForm.value = true      // << mostrar form solo cuando se hace clic en "Nuevo usuario"
 }
 
 const editarUsuario = (u) => {
   modo.value = 'editar'
   usuarioEditandoId.value = u.id
+  confirmDeleteId.value = null
 
   form.name = u.name
   form.email = u.email
@@ -83,25 +92,42 @@ const editarUsuario = (u) => {
   form.goal = u.goal
   form.bio = u.bio
   form.role = u.role
+
+  mostrarForm.value = true      // << mostrar form cuando se edita un usuario
 }
 
 const cancelarEdicion = () => {
   resetForm()
+  mostrarForm.value = false     // << ocultar form al cancelar
+}
+
+// click en botón "Eliminar"
+const onClickEliminar = (u) => {
+  // no dejar que se borre a sí mismo
+  if (usuarioActual.value && usuarioActual.value.id === u.id) {
+    showToast('No podés eliminar tu propio usuario.', 'error')
+    return
+  }
+
+  // si ya está marcado para confirmar, ahora sí eliminamos
+  if (confirmDeleteId.value === u.id) {
+    eliminarUsuario(u)
+  } else {
+    // primer clic: pedimos confirmación “silenciosa”
+    confirmDeleteId.value = u.id
+    showToast(`Volvé a hacer clic en "Eliminar" para confirmar.`, 'info')
+  }
 }
 
 const eliminarUsuario = async (u) => {
-  if (!confirm(`¿Eliminar al usuario "${u.name}"?`)) return
-  // opcional: evitar que el admin se borre a sí mismo
-  if (usuarioActual.value && usuarioActual.value.id === u.id) {
-    alert('No podés eliminar tu propio usuario.')
-    return
-  }
   try {
     await api.delete(`/users/${u.id}`, authConfig.value)
     usuarios.value = usuarios.value.filter(x => x.id !== u.id)
+    confirmDeleteId.value = null
+    showToast(`Usuario "${u.name}" eliminado.`, 'success')
   } catch (e) {
     console.error('Error eliminando usuario:', e.response?.status, e.response?.data || e.message)
-    alert('No se pudo eliminar el usuario.')
+    showToast('No se pudo eliminar el usuario.', 'error')
   }
 }
 
@@ -115,16 +141,21 @@ const guardarUsuario = async () => {
     if (modo.value === 'crear') {
       const { data } = await api.post('/users', payload, authConfig.value)
       usuarios.value.push(data)
+      showToast('Usuario creado correctamente.', 'success')
     } else {
       const id = usuarioEditandoId.value
       const { data } = await api.put(`/users/${id}`, payload, authConfig.value)
       const idx = usuarios.value.findIndex(u => u.id === id)
       if (idx !== -1) usuarios.value[idx] = data
+      showToast('Usuario actualizado correctamente.', 'success')
     }
     resetForm()
+    confirmDeleteId.value = null
+    mostrarForm.value = false   // << tras guardar, volvemos solo al listado
   } catch (e) {
     console.error('Error guardando usuario:', e.response?.status, e.response?.data || e.message)
     error.value = 'No se pudo guardar el usuario.'
+    showToast('No se pudo guardar el usuario.', 'error')
   } finally {
     guardando.value = false
   }
@@ -185,10 +216,10 @@ onMounted(() => {
                 <button
                   class="link-btn link-btn--danger"
                   type="button"
-                  @click="eliminarUsuario(u)"
+                  @click="onClickEliminar(u)"
                   :disabled="usuarioActual && usuarioActual.id === u.id"
                 >
-                  Eliminar
+                  {{ confirmDeleteId === u.id ? 'Confirmar' : 'Eliminar' }}
                 </button>
               </td>
             </tr>
@@ -200,8 +231,11 @@ onMounted(() => {
         </p>
       </div>
 
-      <!-- Columna derecha: formulario -->
-      <div class="admin-perfiles__card admin-perfiles__card--right">
+      <!-- Columna derecha: formulario (solo si se está creando/editando) -->
+      <div
+        v-if="mostrarForm"
+        class="admin-perfiles__card admin-perfiles__card--right"
+      >
         <h2>{{ esModoEdicion ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
 
         <form class="form" @submit.prevent="guardarUsuario">
@@ -268,6 +302,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* tu CSS igual que antes, no lo toqué */
 .admin-perfiles {
   padding: 2rem 2.5rem;
   color: var(--color-text);

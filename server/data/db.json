@@ -35,30 +35,6 @@
       "currentWeight": null,
       "goal": "",
       "bio": ""
-    },
-    {
-      "id": 6,
-      "name": "Usuario3",
-      "email": "u3@mail.com",
-      "password": "$2b$10$LIaJCkMeQSCRuJJLGd3/uu7t/eVBbI2HE4FLjKw7CIewszs5rPHvW",
-      "role": "USER",
-      "age": null,
-      "height": null,
-      "currentWeight": null,
-      "goal": "",
-      "bio": ""
-    },
-    {
-      "id": 7,
-      "name": "Usuario4",
-      "email": "u4@mail.com",
-      "password": "$2b$10$fK7Z9AtVswEmMtG0TfsWtOixXBp8YGkAsz0rSpVrGd7duVG8Lyak.",
-      "role": "COACH",
-      "age": null,
-      "height": null,
-      "currentWeight": null,
-      "goal": "",
-      "bio": ""
     }
   ],
   "routines": [
@@ -74,8 +50,8 @@
       ],
       "likedByIds": [
         1,
-        5,
-        6
+        6,
+        5
       ],
       "createdAt": "2025-11-21T21:27:32.288Z"
     },
@@ -91,13 +67,49 @@
         6
       ],
       "likedByIds": [
-        5,
-        6
+        6,
+        5
       ],
       "isPublic": true,
       "allowCollab": true,
       "pendingCollabIds": [],
       "createdAt": "2025-11-22T18:48:50.396Z"
+    },
+    {
+      "id": 3,
+      "title": "ejemplo1",
+      "description": "fgfgf",
+      "category": "fgf",
+      "level": "fdd",
+      "creatorId": 1,
+      "collaboratorsIds": [
+        5
+      ],
+      "likedByIds": [
+        5
+      ],
+      "isPublic": true,
+      "allowCollab": true,
+      "pendingCollabIds": [],
+      "createdAt": "2025-11-22T23:29:01.820Z"
+    },
+    {
+      "id": 4,
+      "title": "rutina u1",
+      "description": "fgf",
+      "category": "fgf",
+      "level": "gfgf",
+      "creatorId": 5,
+      "collaboratorsIds": [
+        1
+      ],
+      "likedByIds": [
+        1
+      ],
+      "isPublic": true,
+      "allowCollab": true,
+      "pendingCollabIds": [],
+      "createdAt": "2025-11-22T23:30:56.638Z"
     }
   ],
   "progress": [
