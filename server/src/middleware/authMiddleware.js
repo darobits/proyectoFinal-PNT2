@@ -1,15 +1,15 @@
 const jwt = require('jsonwebtoken')
-const SECRET = 'gymsync-secret' // ok para un TP
+
+// Clave de ejemplo; para el TP alcanza perfecto
+const SECRET = 'gymsync-secret'
 
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization
-
   if (!authHeader) {
     return res.status(401).json({ error: 'Token requerido' })
   }
 
   const [scheme, token] = authHeader.split(' ')
-
   if (scheme !== 'Bearer' || !token) {
     return res.status(401).json({ error: 'Formato de token inválido' })
   }
@@ -18,7 +18,7 @@ function authMiddleware(req, res, next) {
     const payload = jwt.verify(token, SECRET)
     req.user = { id: payload.id, role: payload.role }
     next()
-  } catch (error) {
+  } catch (e) {
     return res.status(401).json({ error: 'Token inválido o expirado' })
   }
 }

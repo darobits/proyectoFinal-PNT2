@@ -1,0 +1,148 @@
+:root {
+  --bg-body: #020617;
+  --bg-sidebar: #020617;
+  --bg-sidebar-gradient: linear-gradient(180deg, #020617 0%, #020617 40%, #04101a 100%);
+  --bg-main: #050816;
+  --bg-card: #111827;
+
+  --color-primary: #22d3ee;   /* azul verdoso */
+  --color-secondary: #22c55e; /* verde */
+  --color-accent: #fb923c;    /* naranja del logo */
+
+  --color-text: #e5e7eb;
+  --color-text-muted: #9ca3af;
+  --color-border: #1f2937;
+
+  --radius-lg: 16px;
+  --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.5);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, #0b1120 0, transparent 55%),
+    radial-gradient(circle at bottom, #022c22 0, transparent 55%),
+    var(--bg-body);
+  color: var(--color-text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Shell principal: sidebar + contenido (lo usaremos después) */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Main content */
+.app-main {
+  flex: 1;
+  background: radial-gradient(circle at top right, rgba(34, 211, 238, 0.12), transparent 55%),
+              radial-gradient(circle at bottom left, rgba(34, 197, 94, 0.12), transparent 55%),
+              var(--bg-main);
+  padding: 2rem 2.5rem;
+  overflow-y: auto;
+}
+
+/* Contenedor de página para limitar ancho */
+.page-container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* Componentes genéricos */
+.card-dark {
+  background: rgba(15, 23, 42, 0.9);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--color-border);
+  padding: 1.5rem;
+}
+
+.text-muted {
+  color: var(--color-text-muted) !important;
+}
+
+.badge-pill {
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.75rem;
+}
+
+/* Pequeñas helpers para los acentos */
+.accent-pill {
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  color: #020617;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.6rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ========== LAYOUT PARA LOGIN / REGISTER ========== */
+
+.auth-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 480px;
+  background: radial-gradient(circle at top left, rgba(34, 211, 238, 0.18), transparent 60%),
+              radial-gradient(circle at bottom right, rgba(251, 146, 60, 0.18), transparent 60%),
+              rgba(15, 23, 42, 0.95);
+  border-radius: 24px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  padding: 2.25rem 2rem;
+}
+
+.auth-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.auth-logo img {
+  height: 210px;          /* tamaño más grande */
+  width: auto;
+  border-radius: 100px;    /* bordes suaves para que quede más prolijo */
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.auth-title {
+  font-size: 1.6rem;
+  margin-bottom: 0.25rem;
+}
+
+.auth-subtitle {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  margin-bottom: 1.5rem;
+}
+
+/* Responsive: sidebar colapsada en mobile */
+@media (max-width: 768px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .app-main {
+    padding: 1.25rem 1rem;
+  }
+
+  .auth-card {
+    padding: 1.75rem 1.4rem;
+  }
+}
