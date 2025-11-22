@@ -39,9 +39,9 @@ router.get('/me', authMiddleware, (req, res) => {
   res.json(safeUser)
 })
 
-// PUT /api/users/me → actualizar perfil propio
-router.put('/me', authMiddleware, (req, res) => {
-  const { name, age, height, currentWeight, goal, bio } = req.body
+// PUT /api/users/me → actualizar perfil (edad, peso, objetivo, contraseña, etc.)
+router.put('/me', authMiddleware, async (req, res) => {
+  const { name, age, height, currentWeight, goal, bio, password } = req.body
   const db = readDb()
   const user = db.users.find(u => u.id === req.user.id)
 
@@ -56,9 +56,15 @@ router.put('/me', authMiddleware, (req, res) => {
   if (goal !== undefined) user.goal = goal
   if (bio !== undefined) user.bio = bio
 
+  // 👇 si el usuario escribió una nueva contraseña, la encriptamos
+  if (password && password.trim().length > 0) {
+    const hashed = await bcrypt.hash(password.trim(), 10)
+    user.password = hashed
+  }
+
   writeDb(db)
 
-  const { password, ...safeUser } = user
+  const { password: _pw, ...safeUser } = user
   res.json(safeUser)
 })
 
@@ -152,6 +158,8 @@ router.put('/:id', authMiddleware, (req, res) => {
   const { password, ...safeUser } = user
   res.json(safeUser)
 })
+
+
 
 // DELETE /api/users/:id → eliminar usuario (solo admin)
 router.delete('/:id', authMiddleware, (req, res) => {

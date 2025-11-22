@@ -4,13 +4,13 @@
       "id": 1,
       "name": "Daro",
       "email": "daro@test.com",
-      "password": "$2b$10$LeD9ZP44J9cZ0lUtBlRCl.T/lJ6tcSHyXPy3tfExBLRCTBVHej5z.",
+      "password": "$2b$10$nwA.cm246dpUghH7kQPrkeCUO7EmnIwYWZQuJB7N2jzD4V7GQRVx2",
       "role": "ADMIN",
-      "age": null,
-      "height": null,
-      "currentWeight": null,
-      "goal": "",
-      "bio": ""
+      "age": 24,
+      "height": 175,
+      "currentWeight": 98,
+      "goal": "ejemplo1",
+      "bio": "ejemplo1"
     },
     {
       "id": 2,
