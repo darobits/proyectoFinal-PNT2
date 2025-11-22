@@ -13,34 +13,10 @@
       "bio": "ejemplo1"
     },
     {
-      "id": 2,
-      "name": "Rena",
-      "email": "Rena@test.com",
-      "password": "$2b$10$RzzPH/NSqgZoWaOSjWdiC.8UVv8i.knQSNkGFz921oELGFkZ46JiW",
-      "role": "USER",
-      "age": null,
-      "height": null,
-      "currentWeight": null,
-      "goal": "",
-      "bio": ""
-    },
-    {
       "id": 3,
       "name": "dario",
       "email": "daro@mail.com",
       "password": "$2b$10$VYopJvOJsqyJ0QYxsKYWhOdL5wefDbVIZj7COycq94NHYQD.c7HP.",
-      "role": "ADMIN",
-      "age": null,
-      "height": null,
-      "currentWeight": null,
-      "goal": "",
-      "bio": ""
-    },
-    {
-      "id": 4,
-      "name": "julio",
-      "email": "julio@mail.com",
-      "password": "$2b$10$tN.b3S/wxoxa6kKslO1T8uqAQMqvL/F/7ZzRlusgqW6ITMX02YKAG",
       "role": "USER",
       "age": null,
       "height": null,
@@ -66,6 +42,18 @@
       "email": "u3@mail.com",
       "password": "$2b$10$LIaJCkMeQSCRuJJLGd3/uu7t/eVBbI2HE4FLjKw7CIewszs5rPHvW",
       "role": "USER",
+      "age": null,
+      "height": null,
+      "currentWeight": null,
+      "goal": "",
+      "bio": ""
+    },
+    {
+      "id": 7,
+      "name": "Usuario4",
+      "email": "u4@mail.com",
+      "password": "$2b$10$fK7Z9AtVswEmMtG0TfsWtOixXBp8YGkAsz0rSpVrGd7duVG8Lyak.",
+      "role": "COACH",
       "age": null,
       "height": null,
       "currentWeight": null,
@@ -110,40 +98,6 @@
       "allowCollab": true,
       "pendingCollabIds": [],
       "createdAt": "2025-11-22T18:48:50.396Z"
-    },
-    {
-      "id": 3,
-      "title": "ejemplo2",
-      "description": "hghg",
-      "category": "fvf",
-      "level": "vff",
-      "creatorId": 1,
-      "collaboratorsIds": [
-        6
-      ],
-      "likedByIds": [
-        6
-      ],
-      "isPublic": true,
-      "allowCollab": true,
-      "pendingCollabIds": [],
-      "createdAt": "2025-11-22T19:55:19.606Z"
-    },
-    {
-      "id": 4,
-      "title": "ejemplo3",
-      "description": "fgfgf",
-      "category": "cvc",
-      "level": "dvd",
-      "creatorId": 1,
-      "collaboratorsIds": [],
-      "likedByIds": [],
-      "isPublic": true,
-      "allowCollab": true,
-      "pendingCollabIds": [
-        6
-      ],
-      "createdAt": "2025-11-22T19:57:26.061Z"
     }
   ],
   "progress": [

@@ -453,6 +453,7 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
+/* toggles */
 .toggle {
   display: inline-flex;
   align-items: center;
@@ -501,6 +502,7 @@ onMounted(() => {
   user-select: none;
 }
 
+/* lista de rutinas */
 .routine-item {
   border-radius: 0.9rem;
   border: 1px solid rgba(148, 163, 184, 0.28);
@@ -534,6 +536,7 @@ onMounted(() => {
   margin-bottom: 0.4rem;
 }
 
+/* bloque de solicitudes */
 .routine-item__pending {
   border-top: 1px dashed rgba(148, 163, 184, 0.35);
   margin-top: 0.4rem;
@@ -546,6 +549,10 @@ onMounted(() => {
   align-items: center;
   margin-top: 0.25rem;
   gap: 0.5rem;
+}
+
+.pending-row__name {
+  font-size: 0.85rem;
 }
 
 .pending-row__actions {
@@ -587,6 +594,7 @@ onMounted(() => {
   color: #fca5a5;
 }
 
+/* mensajes */
 .msg {
   font-size: 0.85rem;
 }
@@ -599,6 +607,7 @@ onMounted(() => {
   color: #fb7185;
 }
 
+/* botones chicos */
 .btn-small {
   border-radius: 999px;
   border: 1px solid rgba(148, 163, 184, 0.6);
@@ -634,6 +643,32 @@ onMounted(() => {
   color: var(--color-text);
 }
 
+/* 👉 botón principal (Crear rutina / Guardar cambios) */
+.btn-primary {
+  border-radius: 999px;
+  border: none;
+  padding: 0.55rem 1.4rem;
+  background: linear-gradient(135deg, #22d3ee, #0ea5e9);
+  color: #020617;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.9);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 35px rgba(15, 23, 42, 0.95);
+  filter: brightness(1.05);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* responsive */
 @media (max-width: 900px) {
   .page {
     padding: 1.2rem 1rem;
@@ -644,3 +679,4 @@ onMounted(() => {
   }
 }
 </style>
+
