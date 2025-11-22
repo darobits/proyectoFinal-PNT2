@@ -4,6 +4,16 @@ import auth from './modules/auth'
 export default createStore({
   modules: {
     auth
-    // después agregamos routines y progress
+  },
+  state: {
+    sidebarVisible: true
+  },
+  mutations: {
+    toggleSidebar(state) {
+      state.sidebarVisible = !state.sidebarVisible
+    },
+    setSidebar(state, value) {
+      state.sidebarVisible = value
+    }
   }
 })
