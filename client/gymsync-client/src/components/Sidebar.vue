@@ -14,14 +14,12 @@ const esAdmin = computed(() => store.getters['auth/rolActual'] === 'ADMIN')
 
 // navegación dinámica con reglas
 const navItems = computed(() => [
-  { name: 'Inicio',       to: { name: 'Feed' },         show: estaLogueado.value },
-  { name: 'Mis rutinas',  to: { name: 'MisRutinas' },   show: estaLogueado.value },
-  { name: 'Mi progreso',  to: { name: 'MiProgreso' },   show: estaLogueado.value },
-  { name: 'Estadísticas', to: { name: 'Estadisticas' }, show: estaLogueado.value },
-  { name: 'Perfil',       to: { name: 'Perfil' },       show: estaLogueado.value },
-
-  // solo visibles si es ADMIN
-  { name: 'Admin',        to: { name: 'Admin' },         show: esAdmin.value },
+  { name: 'Inicio',       to: { name: 'Feed' },          show: estaLogueado.value },
+  { name: 'Mis rutinas',  to: { name: 'MisRutinas' },    show: estaLogueado.value },
+  { name: 'Mi progreso',  to: { name: 'MiProgreso' },    show: estaLogueado.value },
+  { name: 'Estadísticas', to: { name: 'Estadisticas' },  show: estaLogueado.value },
+  { name: 'Perfil',       to: { name: 'Perfil' },        show: estaLogueado.value },
+  // 👇 Solo admins ven “Perfiles” (gestión de usuarios)
   { name: 'Perfiles',     to: { name: 'AdminPerfiles' }, show: esAdmin.value }
 ])
 
@@ -50,7 +48,6 @@ const logout = () => {
         <small class="sidebar__section-label">navegación</small>
 
         <nav>
-          <!-- v-for y v-if separados para evitar errores -->
           <template v-for="item in navItems" :key="item.name">
             <RouterLink
               v-if="item.show"
@@ -110,8 +107,9 @@ const logout = () => {
   width: 46px;
   height: 46px;
   border-radius: 999px;
-  background: radial-gradient(circle at 30% 30%, var(--color-primary), transparent 60%),
-              radial-gradient(circle at 70% 70%, var(--color-accent), transparent 60%);
+  background:
+    radial-gradient(circle at 30% 30%, var(--color-primary), transparent 60%),
+    radial-gradient(circle at 70% 70%, var(--color-accent), transparent 60%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -170,7 +168,11 @@ const logout = () => {
 }
 
 .sidebar__link--active {
-  background: linear-gradient(90deg, rgba(34, 211, 238, 0.18), rgba(251, 146, 60, 0.18));
+  background: linear-gradient(
+    90deg,
+    rgba(34, 211, 238, 0.18),
+    rgba(251, 146, 60, 0.18)
+  );
   color: var(--color-primary);
 }
 
