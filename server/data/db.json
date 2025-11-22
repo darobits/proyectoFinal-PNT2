@@ -86,7 +86,8 @@
       ],
       "likedByIds": [
         1,
-        5
+        5,
+        6
       ],
       "createdAt": "2025-11-21T21:27:32.288Z"
     },
@@ -109,6 +110,40 @@
       "allowCollab": true,
       "pendingCollabIds": [],
       "createdAt": "2025-11-22T18:48:50.396Z"
+    },
+    {
+      "id": 3,
+      "title": "ejemplo2",
+      "description": "hghg",
+      "category": "fvf",
+      "level": "vff",
+      "creatorId": 1,
+      "collaboratorsIds": [
+        6
+      ],
+      "likedByIds": [
+        6
+      ],
+      "isPublic": true,
+      "allowCollab": true,
+      "pendingCollabIds": [],
+      "createdAt": "2025-11-22T19:55:19.606Z"
+    },
+    {
+      "id": 4,
+      "title": "ejemplo3",
+      "description": "fgfgf",
+      "category": "cvc",
+      "level": "dvd",
+      "creatorId": 1,
+      "collaboratorsIds": [],
+      "likedByIds": [],
+      "isPublic": true,
+      "allowCollab": true,
+      "pendingCollabIds": [
+        6
+      ],
+      "createdAt": "2025-11-22T19:57:26.061Z"
     }
   ],
   "progress": [

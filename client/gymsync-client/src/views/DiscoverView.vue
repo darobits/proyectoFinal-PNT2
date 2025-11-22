@@ -1,7 +1,7 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useStore } from 'vuex'
+import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
+import { useStore } from 'vuex'
 
 const store = useStore()
 
@@ -15,64 +15,116 @@ const authConfig = computed(() => ({
   }
 }))
 
-const cargando = ref(false)
-const error = ref('')
-const rutinas = ref([])
-
 const usuarioActual = computed(() => store.state.auth.usuarioActual)
+
+const rutinas = ref([])
+const cargando = ref(false)
+const mensajeOk = ref('')
+const mensajeError = ref('')
 
 const cargarRutinas = async () => {
   cargando.value = true
-  error.value = ''
+  mensajeError.value = ''
   try {
     const { data } = await api.get('/routines/discover/list', authConfig.value)
     rutinas.value = data
   } catch (e) {
     console.error(e)
-    error.value = 'No se pudieron cargar las rutinas.'
+    mensajeError.value = 'No se pudieron cargar las rutinas públicas.'
   } finally {
     cargando.value = false
   }
 }
 
+const replaceRoutine = (updated) => {
+  const idx = rutinas.value.findIndex(r => r.id === updated.id)
+  if (idx !== -1) rutinas.value[idx] = updated
+}
+
+const getCollabState = (routine) => {
+  const userId = usuarioActual.value?.id
+  if (!userId) return 'none'
+  if (routine.creatorId === userId) return 'owner'
+  if (Array.isArray(routine.collaboratorsIds) && routine.collaboratorsIds.includes(userId)) {
+    return 'collab'
+  }
+  if (Array.isArray(routine.pendingCollabIds) && routine.pendingCollabIds.includes(userId)) {
+    return 'pending'
+  }
+  return 'none'
+}
+
+const collabLabel = (routine) => {
+  const s = getCollabState(routine)
+  if (s === 'owner') return 'Sos el creador'
+  if (s === 'collab') return 'Colaborás'
+  if (s === 'pending') return 'Pendiente'
+  return 'Colaborar'
+}
+
+const collabDisabled = (routine) => {
+  const s = getCollabState(routine)
+  return s === 'owner' || s === 'collab' || s === 'pending'
+}
+
+const hasLike = (routine) => {
+  const userId = usuarioActual.value?.id
+  return (
+    !!userId &&
+    Array.isArray(routine.likedByIds) &&
+    routine.likedByIds.includes(userId)
+  )
+}
+
 const toggleLike = async (routine) => {
+  mensajeOk.value = ''
+  mensajeError.value = ''
   try {
     const { data } = await api.post(
       `/routines/${routine.id}/toggle-like`,
-      {},
+      null,
       authConfig.value
     )
-    const idx = rutinas.value.findIndex(r => r.id === data.id)
-    if (idx !== -1) rutinas.value[idx] = data
+    replaceRoutine(data)
   } catch (e) {
     console.error(e)
-    alert('No se pudo actualizar el favorito.')
+    mensajeError.value = 'No se pudo actualizar el favorito.'
   }
 }
 
-const pedirColaboracion = async (routine) => {
-  if (!routine.allowCollab) return
-  if (!confirm(`¿Pedir colaborar en "${routine.title}"?`)) return
+const pedirColaborar = async (routine) => {
+  mensajeOk.value = ''
+  mensajeError.value = ''
+
+  const state = getCollabState(routine)
+
+  if (state === 'owner') {
+    mensajeOk.value = 'Sos el creador de esta rutina.'
+    return
+  }
+  if (state === 'collab') {
+    mensajeOk.value = 'Ya sos colaborador de esta rutina.'
+    return
+  }
+  if (state === 'pending') {
+    mensajeOk.value = 'Tu solicitud de colaboración está pendiente.'
+    return
+  }
+
   try {
     const { data } = await api.post(
       `/routines/${routine.id}/request-collab`,
-      {},
+      null,
       authConfig.value
     )
-    const idx = rutinas.value.findIndex(r => r.id === data.id)
-    if (idx !== -1) rutinas.value[idx] = data
-    alert('Solicitud enviada.')
+    replaceRoutine(data)
+    mensajeOk.value = 'Solicitud de colaboración enviada.'
   } catch (e) {
     console.error(e)
-    alert(e.response?.data?.error || 'No se pudo enviar la solicitud.')
+    const backendMsg = e?.response?.data?.error
+    mensajeError.value = backendMsg || 'No se pudo enviar la solicitud de colaboración.'
   }
 }
-
-const userLikeCount = (r) => r.likedByIds?.length || 0
-const userHasLiked = (r) =>
-  Array.isArray(r.likedByIds) &&
-  usuarioActual.value &&
-  r.likedByIds.includes(usuarioActual.value.id)
 
 onMounted(() => {
   cargarRutinas()
@@ -80,175 +132,205 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="discover">
-    <section class="discover__header card-dark">
-      <span class="badge">Explorar rutinas</span>
-      <h1>Descubrí nuevas rutinas</h1>
-      <p class="text-muted">
+  <main class="page">
+    <section class="card-dark mb-4">
+      <span class="accent-pill">explorar rutinas</span>
+      <h1 class="mt-2 mb-1">Descubrí nuevas rutinas</h1>
+      <p class="text-muted mb-0">
         Acá podés ver rutinas públicas de otros usuarios, dar favorito y pedir colaborar si el creador lo permite.
       </p>
     </section>
 
-    <section class="discover__content">
-      <p v-if="error" class="text-error">{{ error }}</p>
-      <p v-else-if="cargando" class="text-muted">Cargando rutinas...</p>
+    <section class="card-dark">
+      <div class="discover-header">
+        <h3 class="mb-0">Rutinas públicas</h3>
+        <span v-if="cargando" class="text-muted small">Cargando...</span>
+      </div>
 
-      <div v-else class="discover__grid">
-        <div
+      <div class="messages">
+        <p v-if="mensajeOk" class="msg msg--ok">{{ mensajeOk }}</p>
+        <p v-if="mensajeError" class="msg msg--error">{{ mensajeError }}</p>
+      </div>
+
+      <p v-if="!cargando && !rutinas.length" class="text-muted">
+        No hay rutinas públicas por ahora. Probá crear una y marcarla como pública.
+      </p>
+
+      <div class="discover-grid">
+        <article
           v-for="r in rutinas"
           :key="r.id"
-          class="routine-card card-dark"
+          class="discover-card"
         >
-          <header class="routine-card__header">
-            <h2>{{ r.title }}</h2>
-            <span class="routine-card__pill">{{ r.level || 'Sin nivel' }}</span>
+          <header class="discover-card__header">
+            <div>
+              <h4 class="mb-0">{{ r.title }}</h4>
+              <small class="text-muted">
+                {{ r.category || 'Sin categoría' }} · {{ r.level || 'Sin nivel' }}
+              </small>
+            </div>
+            <div class="discover-card__badges">
+              <span class="badge badge--public" v-if="r.isPublic !== false">Pública</span>
+              <span class="badge badge--collab" v-if="r.allowCollab">Colaborativa</span>
+            </div>
           </header>
 
-          <p class="routine-card__desc">
-            {{ r.description || 'Sin descripción.' }}
+          <p v-if="r.description" class="discover-card__desc">
+            {{ r.description }}
           </p>
 
-          <p class="routine-card__meta text-muted">
-            {{ r.category || 'Sin categoría' }} · Creador #{{ r.creatorId }}
-          </p>
+          <div class="discover-card__meta">
+            <small class="text-muted">
+              ★ {{ (r.likedByIds && r.likedByIds.length) || 0 }}
+            </small>
+            <small class="text-muted">
+              Colaboradores: {{ (r.collaboratorsIds && r.collaboratorsIds.length) || 0 }}
+            </small>
+          </div>
 
-          <footer class="routine-card__footer">
+          <footer class="discover-card__actions">
             <button
               type="button"
-              class="btn-icon"
+              class="btn-small"
               @click="toggleLike(r)"
             >
-              <span class="icon">
-                {{ userHasLiked(r) ? '★' : '☆' }}
-              </span>
-              <span>{{ userLikeCount(r) }}</span>
+              {{ hasLike(r) ? 'Quitar fav' : 'Favorito' }}
             </button>
 
             <button
-              v-if="r.allowCollab"
               type="button"
-              class="btn-outline"
-              @click="pedirColaboracion(r)"
+              class="btn-small btn-primary-outline"
+              :disabled="collabDisabled(r)"
+              @click="pedirColaborar(r)"
             >
-              Colaborar
+              {{ collabLabel(r) }}
             </button>
           </footer>
-        </div>
-
-        <p v-if="!rutinas.length && !cargando" class="text-muted">
-          No hay rutinas públicas por ahora. Probá crear una y marcarla como pública.
-        </p>
+        </article>
       </div>
     </section>
   </main>
 </template>
 
 <style scoped>
-.discover {
+.page {
   padding: 2rem 2.5rem;
 }
 
-.discover__header {
-  margin-bottom: 1.5rem;
-}
-
-.badge {
-  display: inline-flex;
-  padding: 0.18rem 0.7rem;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.13em;
-  background: rgba(56, 189, 248, 0.12);
-  color: #38bdf8;
-  margin-bottom: 0.5rem;
-}
-
-.discover__content {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.discover__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1rem;
-}
-
-.routine-card {
-  padding: 1rem 1.1rem;
-  border-radius: 1rem;
-}
-
-.routine-card__header {
+.discover-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.75rem;
 }
 
-.routine-card__pill {
-  padding: 0.15rem 0.6rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  background: rgba(148, 163, 184, 0.15);
-  color: var(--color-text-muted);
+.messages {
+  min-height: 1.1rem;
+  margin-bottom: 0.4rem;
 }
 
-.routine-card__desc {
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
-}
-
-.routine-card__meta {
-  font-size: 0.78rem;
-  margin-bottom: 0.7rem;
-}
-
-.routine-card__footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.btn-icon {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.25rem 0.6rem;
-  border-radius: 999px;
-  border: none;
-  cursor: pointer;
-  background: rgba(15, 23, 42, 0.9);
-  color: var(--color-text);
+.msg {
   font-size: 0.85rem;
 }
 
-.btn-icon .icon {
-  font-size: 1rem;
+.msg--ok {
+  color: #4ade80;
 }
 
-.btn-outline {
-  padding: 0.3rem 0.9rem;
+.msg--error {
+  color: #fb7185;
+}
+
+.discover-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.9rem;
+}
+
+.discover-card {
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(15, 23, 42, 0.95);
+  padding: 0.9rem 0.95rem 0.85rem;
+}
+
+.discover-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.discover-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  justify-content: flex-end;
+}
+
+.discover-card__desc {
+  margin: 0.55rem 0 0.4rem;
+  font-size: 0.9rem;
+}
+
+.discover-card__meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  margin-bottom: 0.45rem;
+}
+
+.discover-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.badge {
   border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.5);
+  padding: 0.15rem 0.55rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.badge--public {
+  background: rgba(56, 189, 248, 0.18);
+  color: #38bdf8;
+}
+
+.badge--collab {
+  background: rgba(45, 212, 191, 0.18);
+  color: #5eead4;
+}
+
+.btn-small {
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
   background: transparent;
-  color: var(--color-text-muted);
+  color: var(--color-text);
   font-size: 0.8rem;
+  padding: 0.25rem 0.7rem;
   cursor: pointer;
 }
 
-.btn-outline:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+.btn-small:hover:not(:disabled) {
+  border-color: #22d3ee;
 }
 
-.text-muted {
-  color: var(--color-text-muted);
+.btn-small:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
-.text-error {
-  color: #f97373;
+.btn-primary-outline {
+  border-color: rgba(56, 189, 248, 0.8);
+  color: #e0f2fe;
+}
+
+@media (max-width: 900px) {
+  .page {
+    padding: 1.2rem 1rem;
+  }
 }
 </style>

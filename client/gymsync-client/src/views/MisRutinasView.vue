@@ -5,12 +5,10 @@ import { useStore } from 'vuex'
 
 const store = useStore()
 
-// instancia axios apuntando al backend
 const api = axios.create({
   baseURL: 'http://localhost:3000/api'
 })
 
-// headers con token
 const authConfig = computed(() => ({
   headers: {
     Authorization: `Bearer ${store.state.auth.token}`
@@ -20,7 +18,6 @@ const authConfig = computed(() => ({
 const usuarioActual = computed(() => store.state.auth.usuarioActual)
 const esAdmin = computed(() => store.getters['auth/rolActual'] === 'ADMIN')
 
-// estado
 const rutinas = ref([])
 const cargando = ref(false)
 const guardando = ref(false)
@@ -39,7 +36,6 @@ const form = reactive({
   allowCollab: true
 })
 
-// mapa id → usuario (para mostrar nombres en solicitudes)
 const usuariosMap = ref({})
 
 const resetForm = () => {
@@ -53,13 +49,31 @@ const resetForm = () => {
   form.allowCollab = true
 }
 
-// puede gestionar (editar, borrar, aprobar) esta rutina?
-const puedeGestionar = (r) => {
-  if (!usuarioActual.value) return false
-  return r.creatorId === usuarioActual.value.id || esAdmin.value
+// ¿creador o admin? (para ver/aprobar solicitudes)
+const puedeAprobar = (r) => {
+  const userId = usuarioActual.value?.id
+  if (!userId) return false
+  const esCreador = r.creatorId === userId
+  return esCreador || esAdmin.value
 }
 
-// obtener rutinas donde soy creador o colaborador
+// ¿puede editar? → creador, colaborador o admin
+const puedeEditar = (r) => {
+  const userId = usuarioActual.value?.id
+  if (!userId) return false
+  const esCreador = r.creatorId === userId
+  const esColab = Array.isArray(r.collaboratorsIds) && r.collaboratorsIds.includes(userId)
+  return esCreador || esColab || esAdmin.value
+}
+
+// ¿puede eliminar? → solo creador o admin
+const puedeEliminar = (r) => {
+  const userId = usuarioActual.value?.id
+  if (!userId) return false
+  const esCreador = r.creatorId === userId
+  return esCreador || esAdmin.value
+}
+
 const cargarRutinas = async () => {
   cargando.value = true
   mensajeError.value = ''
@@ -74,7 +88,6 @@ const cargarRutinas = async () => {
   }
 }
 
-// obtener todos los usuarios para resolver nombres por id
 const cargarUsuarios = async () => {
   try {
     const { data } = await api.get('/users', authConfig.value)
@@ -154,7 +167,6 @@ const eliminarRutina = async (r) => {
   }
 }
 
-// aprobar una solicitud de colaboración
 const aprobarColab = async (routine, userId) => {
   mensajeError.value = ''
   mensajeOk.value = ''
@@ -173,7 +185,6 @@ const aprobarColab = async (routine, userId) => {
   }
 }
 
-// rechazar una solicitud de colaboración
 const rechazarColab = async (routine, userId) => {
   mensajeError.value = ''
   mensajeOk.value = ''
@@ -205,14 +216,12 @@ onMounted(() => {
       <span class="accent-pill">rutinas</span>
       <h1 class="mt-2 mb-1">Mis rutinas</h1>
       <p class="text-muted mb-0">
-        Desde acá podés crear, editar y administrar tus rutinas.
-        Las que marques como <strong>públicas</strong> van a aparecer en la sección
-        <strong>Descubrir</strong>.
+        Desde acá podés crear, editar y administrar tus rutinas. Las que marques como
+        <strong>públicas</strong> van a aparecer en la sección <strong>Descubrir</strong>.
       </p>
     </section>
 
     <section class="row g-3">
-      
       <!-- FORMULARIO -->
       <div class="col-md-5">
         <div class="card-dark">
@@ -263,9 +272,13 @@ onMounted(() => {
             </label>
           </div>
 
-          <!-- BOTÓN LINDO -->
           <div class="mt-3">
-            <button class="btn-create" :disabled="guardando" @click="guardarRutina">
+            <button
+              class="btn-primary"
+              type="button"
+              :disabled="guardando"
+              @click="guardarRutina"
+            >
               {{ guardando
                 ? 'Guardando...'
                 : (modo === 'crear' ? 'Crear rutina' : 'Guardar cambios') }}
@@ -298,7 +311,6 @@ onMounted(() => {
             Todavía no creaste ninguna rutina. Empezá con el formulario de la izquierda.
           </p>
 
-          <!-- ACÁ ESTABA EL PROBLEMA: ESTE BLOQUE FALTABA -->
           <div
             v-for="r in rutinas"
             :key="r.id"
@@ -314,10 +326,16 @@ onMounted(() => {
               </div>
 
               <div class="routine-item__badges">
-                <span class="badge" :class="r.isPublic ? 'badge--public' : 'badge--private'">
+                <span
+                  class="badge"
+                  :class="r.isPublic ? 'badge--public' : 'badge--private'"
+                >
                   {{ r.isPublic ? 'Pública' : 'Privada' }}
                 </span>
-                <span class="badge" :class="r.allowCollab ? 'badge--collab' : 'badge--nocollab'">
+                <span
+                  class="badge"
+                  :class="r.allowCollab ? 'badge--collab' : 'badge--nocollab'"
+                >
                   {{ r.allowCollab ? 'Colaborativa' : 'Sólo creador' }}
                 </span>
               </div>
@@ -333,47 +351,70 @@ onMounted(() => {
                 {{ r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '-' }}
               </small>
               <small class="text-muted">
-                Likes: {{ r.likedByIds?.length || 0 }}
-                • Colaboradores: {{ r.collaboratorsIds?.length || 0 }}
+                Likes: {{ (r.likedByIds && r.likedByIds.length) || 0 }}
+                • Colaboradores:
+                {{ (r.collaboratorsIds && r.collaboratorsIds.length) || 0 }}
               </small>
             </div>
 
-            <!-- SOLICITUDES -->
+            <!-- SOLICITUDES DE COLABORACIÓN (solo creador/admin) -->
             <div
-              v-if="puedeGestionar(r) && r.pendingCollabIds?.length"
+              v-if="puedeAprobar(r) && r.pendingCollabIds && r.pendingCollabIds.length"
               class="routine-item__pending"
             >
               <small class="text-muted">Solicitudes de colaboración:</small>
 
-              <div v-for="uid in r.pendingCollabIds" :key="uid" class="pending-row">
+              <div
+                v-for="uid in r.pendingCollabIds"
+                :key="uid"
+                class="pending-row"
+              >
                 <span class="pending-row__name">
                   {{ usuariosMap[uid]?.name || ('Usuario #' + uid) }}
                 </span>
-
                 <div class="pending-row__actions">
-                  <button class="btn-small" @click="aprobarColab(r, uid)">Aprobar</button>
-                  <button class="btn-small btn-danger" @click="rechazarColab(r, uid)">Rechazar</button>
+                  <button
+                    class="btn-small"
+                    type="button"
+                    @click="aprobarColab(r, uid)"
+                  >
+                    Aprobar
+                  </button>
+                  <button
+                    class="btn-small btn-danger"
+                    type="button"
+                    @click="rechazarColab(r, uid)"
+                  >
+                    Rechazar
+                  </button>
                 </div>
               </div>
             </div>
 
             <div class="routine-item__actions">
-              <button v-if="puedeGestionar(r)" class="btn-small" @click="editarRutina(r)">
+              <button
+                v-if="puedeEditar(r)"
+                class="btn-small"
+                type="button"
+                @click="editarRutina(r)"
+              >
                 Editar
               </button>
-
-              <button v-if="puedeGestionar(r)" class="btn-small btn-danger" @click="eliminarRutina(r)">
+              <button
+                v-if="puedeEliminar(r)"
+                class="btn-small btn-danger"
+                type="button"
+                @click="eliminarRutina(r)"
+              >
                 Eliminar
               </button>
             </div>
           </div>
         </div>
       </div>
-
     </section>
   </main>
 </template>
-
 
 <style scoped>
 .page {
@@ -412,7 +453,6 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
-/* toggles */
 .toggle {
   display: inline-flex;
   align-items: center;
@@ -461,7 +501,6 @@ onMounted(() => {
   user-select: none;
 }
 
-/* lista de rutinas */
 .routine-item {
   border-radius: 0.9rem;
   border: 1px solid rgba(148, 163, 184, 0.28);
@@ -495,7 +534,6 @@ onMounted(() => {
   margin-bottom: 0.4rem;
 }
 
-/* bloque de solicitudes */
 .routine-item__pending {
   border-top: 1px dashed rgba(148, 163, 184, 0.35);
   margin-top: 0.4rem;
@@ -508,10 +546,6 @@ onMounted(() => {
   align-items: center;
   margin-top: 0.25rem;
   gap: 0.5rem;
-}
-
-.pending-row__name {
-  font-size: 0.85rem;
 }
 
 .pending-row__actions {
@@ -553,7 +587,6 @@ onMounted(() => {
   color: #fca5a5;
 }
 
-/* mensajes */
 .msg {
   font-size: 0.85rem;
 }
@@ -566,55 +599,6 @@ onMounted(() => {
   color: #fb7185;
 }
 
-/* BOTÓN PRINCIPAL (Crear / Guardar rutina) */
-.btn-create {
-  border: none;
-  border-radius: 999px;
-  padding: 0.55rem 1.4rem;
-  background: linear-gradient(90deg, #22d3ee, #fb923c);
-  color: #0f172a;
-  font-weight: 600;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.btn-create:hover {
-  transform: scale(1.03);
-  box-shadow: 0 0 18px rgba(56, 189, 248, 0.4);
-}
-.btn-primary {
-  border: none;
-  border-radius: 999px;
-  padding: 0.65rem 1.5rem;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-
-  background: linear-gradient(135deg, #22d3ee, #0ea5e9);
-  color: #020617;
-
-  box-shadow: 0 4px 14px rgba(34, 211, 238, 0.3);
-  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
-}
-
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 7px 20px rgba(34, 211, 238, 0.4);
-  filter: brightness(1.03);
-}
-
-.btn-primary:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 3px 10px rgba(34, 211, 238, 0.25);
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: default;
-  box-shadow: none;
-}
-
-/* botones chicos */
 .btn-small {
   border-radius: 999px;
   border: 1px solid rgba(148, 163, 184, 0.6);
