@@ -22,6 +22,7 @@ const navItems = computed(() => [
   { name: 'Mis rutinas',  to: { name: 'MisRutinas' },    show: estaLogueado.value },
   { name: 'Mi progreso',  to: { name: 'MiProgreso' },    show: estaLogueado.value },
   { name: 'Estadísticas', to: { name: 'Estadisticas' },  show: estaLogueado.value },
+  { name: 'Descubrir',    to: { name: 'Descubrir' },     show: estaLogueado.value },
   { name: 'Perfil',       to: { name: 'Perfil' },        show: estaLogueado.value },
   { name: 'Perfiles',     to: { name: 'AdminPerfiles' }, show: esAdmin.value }
 ])

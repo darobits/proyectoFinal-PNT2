@@ -4,200 +4,230 @@ const { authMiddleware } = require('../middleware/authMiddleware')
 
 const router = express.Router()
 
-// Helper para encontrar rutina
-function findRoutine(db, id) {
-  return db.routines.find(r => r.id === id)
-}
-
-// Helper: verificar si el usuario puede editar (creador, colaborador o ADMIN)
-function canEditRoutine(routine, user) {
-  if (!routine || !user) return false
-  if (user.role === 'ADMIN') return true
-  if (routine.creatorId === user.id) return true
-  if (Array.isArray(routine.collaboratorsIds) && routine.collaboratorsIds.includes(user.id)) return true
-  return false
-}
-
-// GET /api/routines  → lista todas las rutinas
-router.get('/', (req, res) => {
+// 🔹 GET /api/routines → rutinas donde soy creador o colaborador
+router.get('/', authMiddleware, (req, res) => {
   const db = readDb()
+  const userId = req.user.id
 
-  const routines = db.routines.map(r => ({
-    ...r,
-    likes: Array.isArray(r.likedByIds) ? r.likedByIds.length : 0
-  }))
+  const routines = db.routines.filter(r =>
+    r.creatorId === userId ||
+    (Array.isArray(r.collaboratorsIds) && r.collaboratorsIds.includes(userId))
+  )
 
   res.json(routines)
 })
 
-// GET /api/routines/:id → detalle de una rutina
-router.get('/:id', (req, res) => {
-  const id = Number(req.params.id)
+// 🔹 GET /api/routines/:id → detalle de rutina
+router.get('/:id', authMiddleware, (req, res) => {
   const db = readDb()
+  const id = Number(req.params.id)
 
-  const routine = findRoutine(db, id)
-  if (!routine) {
-    return res.status(404).json({ error: 'Rutina no encontrada' })
-  }
+  const routine = db.routines.find(r => r.id === id)
+  if (!routine) return res.status(404).json({ error: 'Rutina no encontrada' })
 
-  const routineWithLikes = {
-    ...routine,
-    likes: Array.isArray(routine.likedByIds) ? routine.likedByIds.length : 0
-  }
-
-  res.json(routineWithLikes)
+  res.json(routine)
 })
 
-// POST /api/routines → crear rutina (requiere auth)
+// 🔹 POST /api/routines → crear rutina nueva
 router.post('/', authMiddleware, (req, res) => {
-  const { title, description, category, level } = req.body
-
-  if (!title || !description || !category || !level) {
-    return res.status(400).json({ error: 'Faltan datos de la rutina' })
-  }
-
   const db = readDb()
-
-  const newRoutine = {
-    id: getNextId(db.routines),
+  const {
     title,
     description,
     category,
     level,
+    isPublic = true,
+    allowCollab = true
+  } = req.body
+
+  if (!title) {
+    return res.status(400).json({ error: 'El título es obligatorio' })
+  }
+
+  const newRoutine = {
+    id: getNextId(db.routines),
+    title,
+    description: description || '',
+    category: category || '',
+    level: level || 'Sin nivel',
     creatorId: req.user.id,
     collaboratorsIds: [],
     likedByIds: [],
+    isPublic,
+    allowCollab,
+    pendingCollabIds: [],
     createdAt: new Date().toISOString()
   }
 
   db.routines.push(newRoutine)
   writeDb(db)
 
-  res.status(201).json({
-    ...newRoutine,
-    likes: 0
-  })
+  res.status(201).json(newRoutine)
 })
 
-// PUT /api/routines/:id → editar rutina (creador, colaborador o ADMIN)
+// 🔹 PUT /api/routines/:id → editar (solo creador o ADMIN)
 router.put('/:id', authMiddleware, (req, res) => {
-  const id = Number(req.params.id)
-  const { title, description, category, level } = req.body
-
   const db = readDb()
-  const routine = findRoutine(db, id)
+  const id = Number(req.params.id)
+  const userId = req.user.id
+  const role = req.user.role
 
-  if (!routine) {
-    return res.status(404).json({ error: 'Rutina no encontrada' })
-  }
+  const routine = db.routines.find(r => r.id === id)
+  if (!routine) return res.status(404).json({ error: 'Rutina no encontrada' })
 
-  if (!canEditRoutine(routine, req.user)) {
+  if (routine.creatorId !== userId && role !== 'ADMIN') {
     return res.status(403).json({ error: 'No tenés permisos para editar esta rutina' })
   }
+
+  const {
+    title,
+    description,
+    category,
+    level,
+    isPublic,
+    allowCollab
+  } = req.body
 
   if (title !== undefined) routine.title = title
   if (description !== undefined) routine.description = description
   if (category !== undefined) routine.category = category
   if (level !== undefined) routine.level = level
+  if (isPublic !== undefined) routine.isPublic = isPublic
+  if (allowCollab !== undefined) routine.allowCollab = allowCollab
 
   writeDb(db)
-
-  res.json({
-    ...routine,
-    likes: Array.isArray(routine.likedByIds) ? routine.likedByIds.length : 0
-  })
+  res.json(routine)
 })
 
-// DELETE /api/routines/:id → eliminar rutina (creador o ADMIN)
+// 🔹 DELETE /api/routines/:id → eliminar (solo creador o ADMIN)
 router.delete('/:id', authMiddleware, (req, res) => {
-  const id = Number(req.params.id)
   const db = readDb()
+  const id = Number(req.params.id)
+  const userId = req.user.id
+  const role = req.user.role
 
-  const routine = findRoutine(db, id)
-  if (!routine) {
-    return res.status(404).json({ error: 'Rutina no encontrada' })
-  }
+  const idx = db.routines.findIndex(r => r.id === id)
+  if (idx === -1) return res.status(404).json({ error: 'Rutina no encontrada' })
 
-  if (!(req.user.role === 'ADMIN' || routine.creatorId === req.user.id)) {
+  const routine = db.routines[idx]
+
+  if (routine.creatorId !== userId && role !== 'ADMIN') {
     return res.status(403).json({ error: 'No tenés permisos para eliminar esta rutina' })
   }
 
-  db.routines = db.routines.filter(r => r.id !== id)
+  db.routines.splice(idx, 1)
   writeDb(db)
 
-  res.json({ message: 'Rutina eliminada' })
+  res.json({ ok: true })
 })
 
-// POST /api/routines/:id/like → like/unlike (toggle) de rutina
-router.post('/:id/like', authMiddleware, (req, res) => {
-  const id = Number(req.params.id)
-  const db = readDb()
+// ╔══════════════════════════════════════════╗
+// ║          ENDPOINTS SOCIALES             ║
+// ╚══════════════════════════════════════════╝
 
-  const routine = findRoutine(db, id)
-  if (!routine) {
-    return res.status(404).json({ error: 'Rutina no encontrada' })
-  }
+// 🔹 GET /api/routines/discover → rutinas públicas de otros usuarios
+router.get('/discover/list', authMiddleware, (req, res) => {
+  const db = readDb()
+  const userId = req.user.id
+
+  const routines = db.routines.filter(r => {
+    const isPublic = r.isPublic === undefined ? true : !!r.isPublic
+    return (
+      isPublic &&
+      r.creatorId !== userId
+    )
+  })
+
+  res.json(routines)
+})
+
+// 🔹 POST /api/routines/:id/toggle-like
+router.post('/:id/toggle-like', authMiddleware, (req, res) => {
+  const db = readDb()
+  const userId = req.user.id
+  const id = Number(req.params.id)
+
+  const routine = db.routines.find(r => r.id === id)
+  if (!routine) return res.status(404).json({ error: 'Rutina no encontrada' })
 
   if (!Array.isArray(routine.likedByIds)) {
     routine.likedByIds = []
   }
 
-  const alreadyLiked = routine.likedByIds.includes(req.user.id)
-
-  if (alreadyLiked) {
-    // si ya la likeó, quitamos el like (toggle)
-    routine.likedByIds = routine.likedByIds.filter(uid => uid !== req.user.id)
+  if (routine.likedByIds.includes(userId)) {
+    routine.likedByIds = routine.likedByIds.filter(uid => uid !== userId)
   } else {
-    routine.likedByIds.push(req.user.id)
+    routine.likedByIds.push(userId)
   }
 
   writeDb(db)
-
-  res.json({
-    ...routine,
-    likes: routine.likedByIds.length
-  })
+  res.json(routine)
 })
 
-// POST /api/routines/:id/collaborators → agregar colaborador (solo creador o ADMIN)
-router.post('/:id/collaborators', authMiddleware, (req, res) => {
-  const id = Number(req.params.id)
-  const { userId } = req.body
-
-  if (!userId) {
-    return res.status(400).json({ error: 'Falta userId de colaborador' })
-  }
-
+// 🔹 POST /api/routines/:id/request-collab
+router.post('/:id/request-collab', authMiddleware, (req, res) => {
   const db = readDb()
-  const routine = findRoutine(db, id)
+  const userId = req.user.id
+  const id = Number(req.params.id)
 
-  if (!routine) {
-    return res.status(404).json({ error: 'Rutina no encontrada' })
+  const routine = db.routines.find(r => r.id === id)
+  if (!routine) return res.status(404).json({ error: 'Rutina no encontrada' })
+
+  if (!routine.allowCollab) {
+    return res.status(400).json({ error: 'La rutina no admite colaboradores' })
   }
 
-  if (!(req.user.role === 'ADMIN' || routine.creatorId === req.user.id)) {
-    return res.status(403).json({ error: 'Solo el creador o un ADMIN puede agregar colaboradores' })
+  if (!Array.isArray(routine.pendingCollabIds)) {
+    routine.pendingCollabIds = []
   }
-
-  const collaborator = db.users.find(u => u.id === Number(userId))
-  if (!collaborator) {
-    return res.status(404).json({ error: 'Usuario colaborador no encontrado' })
-  }
-
   if (!Array.isArray(routine.collaboratorsIds)) {
     routine.collaboratorsIds = []
   }
 
-  if (!routine.collaboratorsIds.includes(collaborator.id)) {
-    routine.collaboratorsIds.push(collaborator.id)
+  if (
+    routine.pendingCollabIds.includes(userId) ||
+    routine.collaboratorsIds.includes(userId) ||
+    routine.creatorId === userId
+  ) {
+    return res.status(400).json({ error: 'Ya sos colaborador o tenés solicitud pendiente' })
+  }
+
+  routine.pendingCollabIds.push(userId)
+  writeDb(db)
+  res.json(routine)
+})
+
+// 🔹 POST /api/routines/:id/approve-collab
+router.post('/:id/approve-collab', authMiddleware, (req, res) => {
+  const db = readDb()
+  const ownerId = req.user.id
+  const role = req.user.role
+  const id = Number(req.params.id)
+  const { collaboratorId } = req.body
+
+  const routine = db.routines.find(r => r.id === id)
+  if (!routine) return res.status(404).json({ error: 'Rutina no encontrada' })
+
+  // solo creador o ADMIN
+  if (routine.creatorId !== ownerId && role !== 'ADMIN') {
+    return res.status(403).json({ error: 'No tenés permisos para aprobar colaboradores' })
+  }
+
+  if (!Array.isArray(routine.pendingCollabIds)) routine.pendingCollabIds = []
+  if (!Array.isArray(routine.collaboratorsIds)) routine.collaboratorsIds = []
+
+  const cId = Number(collaboratorId)
+  if (!routine.pendingCollabIds.includes(cId)) {
+    return res.status(400).json({ error: 'Solicitud inexistente' })
+  }
+
+  routine.pendingCollabIds = routine.pendingCollabIds.filter(cid => cid !== cId)
+  if (!routine.collaboratorsIds.includes(cId)) {
+    routine.collaboratorsIds.push(cId)
   }
 
   writeDb(db)
-
-  res.json({
-    ...routine,
-    likes: Array.isArray(routine.likedByIds) ? routine.likedByIds.length : 0
-  })
+  res.json(routine)
 })
 
 module.exports = router

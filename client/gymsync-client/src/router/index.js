@@ -5,10 +5,10 @@ import RegisterView from '../views/RegisterView.vue'
 import MisRutinasView from '../views/MisRutinasView.vue'
 import MiProgresoView from '../views/MiProgresoView.vue'
 import EstadisticasView from '../views/EstadisticasView.vue'
-import AdminView from '../views/AdminView.vue'
+import AdminPerfilesView from '../views/AdminPerfilesView.vue'
 import RutinaDetalleView from '../views/RutinaDetalleView.vue'
 import PerfilView from '../views/PerfilView.vue'
-import AdminPerfilesView from '../views/AdminPerfilesView.vue'
+import DiscoverView from '../views/DiscoverView.vue'
 import store from '../store'
 
 const routes = [
@@ -39,6 +39,22 @@ const routes = [
     component: EstadisticasView,
     meta: { requiereAuth: true }
   },
+
+  // 🔹 NUEVA sección social
+  {
+    path: '/descubrir',
+    name: 'Descubrir',
+    component: DiscoverView,
+    meta: { requiereAuth: true }
+  },
+
+  {
+    path: '/admin/perfiles',
+    name: 'AdminPerfiles',
+    component: AdminPerfilesView,
+    meta: { requiereRol: 'ADMIN' }
+  },
+
   {
     path: '/perfil',
     name: 'Perfil',
@@ -51,20 +67,6 @@ const routes = [
     component: RutinaDetalleView,
     props: true,
     meta: { requiereAuth: true }
-  },
-
-  // RUTAS SOLO ADMIN
-  {
-    path: '/admin',
-    name: 'Admin',
-    component: AdminView,
-    meta: { requiereAuth: true, requiereRol: 'ADMIN' }
-  },
-  {
-    path: '/admin/perfiles',
-    name: 'AdminPerfiles',
-    component: AdminPerfilesView,
-    meta: { requiereAuth: true, requiereRol: 'ADMIN' }
   }
 ]
 
@@ -79,7 +81,6 @@ router.beforeEach((to) => {
   const estaLogueado = store.getters['auth/estaLogueado']
   const rolActual = store.getters['auth/rolActual']
 
-  // si ya está logueado, no tiene sentido ir a login/register
   if ((to.name === 'Login' || to.name === 'Register') && estaLogueado) {
     return { name: 'Feed' }
   }
