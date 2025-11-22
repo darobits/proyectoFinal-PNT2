@@ -59,6 +59,18 @@
       "currentWeight": null,
       "goal": "",
       "bio": ""
+    },
+    {
+      "id": 6,
+      "name": "Usuario3",
+      "email": "u3@mail.com",
+      "password": "$2b$10$LIaJCkMeQSCRuJJLGd3/uu7t/eVBbI2HE4FLjKw7CIewszs5rPHvW",
+      "role": "USER",
+      "age": null,
+      "height": null,
+      "currentWeight": null,
+      "goal": "",
+      "bio": ""
     }
   ],
   "routines": [
@@ -85,15 +97,17 @@
       "category": "Full body",
       "level": "Intermedio",
       "creatorId": 1,
-      "collaboratorsIds": [],
+      "collaboratorsIds": [
+        5,
+        6
+      ],
       "likedByIds": [
-        5
+        5,
+        6
       ],
       "isPublic": true,
       "allowCollab": true,
-      "pendingCollabIds": [
-        5
-      ],
+      "pendingCollabIds": [],
       "createdAt": "2025-11-22T18:48:50.396Z"
     }
   ],

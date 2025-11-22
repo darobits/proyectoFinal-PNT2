@@ -230,4 +230,34 @@ router.post('/:id/approve-collab', authMiddleware, (req, res) => {
   res.json(routine)
 })
 
+// 🔹 POST /api/routines/:id/reject-collab
+router.post('/:id/reject-collab', authMiddleware, (req, res) => {
+  const db = readDb()
+  const ownerId = req.user.id
+  const role = req.user.role
+  const id = Number(req.params.id)
+  const { collaboratorId } = req.body
+
+  const routine = db.routines.find(r => r.id === id)
+  if (!routine) return res.status(404).json({ error: 'Rutina no encontrada' })
+
+  // solo creador o ADMIN
+  if (routine.creatorId !== ownerId && role !== 'ADMIN') {
+    return res.status(403).json({ error: 'No tenés permisos para rechazar colaboradores' })
+  }
+
+  if (!Array.isArray(routine.pendingCollabIds)) routine.pendingCollabIds = []
+
+  const cId = Number(collaboratorId)
+  if (!routine.pendingCollabIds.includes(cId)) {
+    return res.status(400).json({ error: 'Solicitud inexistente' })
+  }
+
+  // simplemente la quitamos de pendientes
+  routine.pendingCollabIds = routine.pendingCollabIds.filter(cid => cid !== cId)
+
+  writeDb(db)
+  res.json(routine)
+})
+
 module.exports = router
