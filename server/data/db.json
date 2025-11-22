@@ -47,6 +47,18 @@
       "currentWeight": null,
       "goal": "",
       "bio": ""
+    },
+    {
+      "id": 5,
+      "name": "Usuario1",
+      "email": "u1@mail.com",
+      "password": "$2b$10$.VKX.RlX4wB8SASg6gujYeHe5wi6obKNsh9i2z1UHJPFJ9WawCDZ2",
+      "role": "USER",
+      "age": null,
+      "height": null,
+      "currentWeight": null,
+      "goal": "",
+      "bio": ""
     }
   ],
   "routines": [
@@ -61,9 +73,28 @@
         2
       ],
       "likedByIds": [
-        1
+        1,
+        5
       ],
       "createdAt": "2025-11-21T21:27:32.288Z"
+    },
+    {
+      "id": 2,
+      "title": "Pecho y Espalda",
+      "description": "3x2",
+      "category": "Full body",
+      "level": "Intermedio",
+      "creatorId": 1,
+      "collaboratorsIds": [],
+      "likedByIds": [
+        5
+      ],
+      "isPublic": true,
+      "allowCollab": true,
+      "pendingCollabIds": [
+        5
+      ],
+      "createdAt": "2025-11-22T18:48:50.396Z"
     }
   ],
   "progress": [
