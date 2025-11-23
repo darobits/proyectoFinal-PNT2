@@ -10,7 +10,10 @@
       "height": 175,
       "currentWeight": 98,
       "goal": "ejemplo1",
-      "bio": "ejemplo1"
+      "bio": "ejemplo1",
+      "friends": [
+        5
+      ]
     },
     {
       "id": 3,
@@ -34,7 +37,10 @@
       "height": null,
       "currentWeight": null,
       "goal": "",
-      "bio": ""
+      "bio": "",
+      "friends": [
+        1
+      ]
     },
     {
       "id": 6,
@@ -296,6 +302,32 @@
       "minutesTrained": 37,
       "avgWeight": 85,
       "id": 5
+    }
+  ],
+  "friendRequests": [
+    {
+      "id": 1,
+      "fromUserId": 1,
+      "toUserId": 6,
+      "status": "pending",
+      "createdAt": "2025-11-23T19:48:08.005Z"
+    },
+    {
+      "id": 2,
+      "fromUserId": 1,
+      "toUserId": 5,
+      "status": "accepted",
+      "createdAt": "2025-11-23T19:48:11.763Z",
+      "respondedAt": "2025-11-23T19:48:32.389Z"
+    }
+  ],
+  "messages": [
+    {
+      "id": 1,
+      "fromUserId": 1,
+      "toUserId": 5,
+      "content": "Hola",
+      "createdAt": "2025-11-23T19:53:13.280Z"
     }
   ]
 }

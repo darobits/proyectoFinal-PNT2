@@ -23,6 +23,7 @@ const navItems = computed(() => [
   { name: 'Mi progreso',  to: { name: 'MiProgreso' },    show: estaLogueado.value },
   { name: 'Estadísticas', to: { name: 'Estadisticas' },  show: estaLogueado.value },
   { name: 'Descubrir',    to: { name: 'Descubrir' },     show: estaLogueado.value },
+  { name: 'Comunidad',    to: { name: 'Friends' },       show: estaLogueado.value }, // 🔹 NUEVO
   { name: 'Perfil',       to: { name: 'Perfil' },        show: estaLogueado.value },
   { name: 'Perfiles',     to: { name: 'AdminPerfiles' }, show: esAdmin.value }
 ])
@@ -87,7 +88,7 @@ const logout = () => {
         </div>
 
         <button class="sidebar__logout-btn" @click="logout">
-          Salir
+          Cerrar Sesion
         </button>
       </div>
     </div>

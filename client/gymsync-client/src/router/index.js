@@ -67,7 +67,19 @@ const routes = [
     component: RutinaDetalleView,
     props: true,
     meta: { requiereAuth: true }
-  }
+  },
+  {
+  path: '/comunidad',
+  name: 'Friends',
+  component: () => import('../views/FriendsView.vue'),
+  meta: { requiresAuth: true } // y roles si usás allowedRoles
+},
+{
+  path: '/comunidad/mensajes/:friendId',
+  name: 'Messages',
+  component: () => import('../views/MessagesView.vue'),
+  meta: { requiresAuth: true }
+}
 ]
 
 const router = createRouter({
