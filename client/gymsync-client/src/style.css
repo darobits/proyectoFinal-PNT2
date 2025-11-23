@@ -35,10 +35,35 @@ body {
 }
 
 /* Shell principal: sidebar + contenido (lo usaremos después) */
+/* Shell principal: sidebar + contenido */
 .app-shell {
   display: flex;
   min-height: 100vh;
+  position: relative;   /* 👈 NUEVO */
+  z-index: 0;           /* 👈 NUEVO: capa base */
 }
+
+/* Main content */
+.app-main {
+  flex: 1;
+  background:
+    radial-gradient(circle at top right, rgba(34, 211, 238, 0.12), transparent 55%),
+    radial-gradient(circle at bottom left, rgba(34, 197, 94, 0.12), transparent 55%),
+    var(--bg-main);
+  padding: 2rem 2.5rem;
+  overflow-y: auto;
+  position: relative;   /* 👈 NUEVO */
+  z-index: 1;           /* 👈 por encima del fondo del body */
+}
+
+/* Contenedor de página para limitar ancho */
+.page-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  position: relative;   /* 👈 NUEVO */
+  z-index: 2;           /* 👈 acá vive <RouterView>, por encima de todo lo anterior */
+}
+
 
 /* Main content */
 .app-main {
@@ -50,11 +75,7 @@ body {
   overflow-y: auto;
 }
 
-/* Contenedor de página para limitar ancho */
-.page-container {
-  max-width: 1100px;
-  margin: 0 auto;
-}
+
 
 /* Componentes genéricos */
 .card-dark {

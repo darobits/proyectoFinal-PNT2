@@ -1,11 +1,10 @@
+<!-- src/views/MiProgresoView.vue -->
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { useStore } from 'vuex'
 import axios from 'axios'
-import { useToast } from '../composables/useToast'
-
-// Chart.js auto (registra todo solo)
 import Chart from 'chart.js/auto'
+import { useToast } from '../composables/useToast'
 
 const store = useStore()
 const { showToast } = useToast()
@@ -20,10 +19,11 @@ const authConfig = computed(() => ({
   }
 }))
 
+const usuarioActual = computed(() => store.state.auth.usuarioActual)
+
 const loading = ref(false)
 const error = ref(null)
-
-const progress = ref(null)
+const progressEntries = ref([]) // viene directo de /api/progress/user/:id
 
 // refs gráficos
 const weightChartRef = ref(null)
@@ -32,74 +32,142 @@ const minutesChartRef = ref(null)
 let weightChartInstance = null
 let minutesChartInstance = null
 
-// -------- MOCK de respaldo --------
-const mockProgress = {
-  weightProgress: [
-    { date: '2025-10-20', weight: 80.0 },
-    { date: '2025-10-27', weight: 79.4 },
-    { date: '2025-11-03', weight: 79.0 },
-    { date: '2025-11-10', weight: 78.6 },
-    { date: '2025-11-17', weight: 78.2 }
-  ],
-  workoutProgress: [
-    { weekStart: '2025-10-20', workouts: 3, minutes: 150 },
-    { weekStart: '2025-10-27', workouts: 4, minutes: 200 },
-    { weekStart: '2025-11-03', workouts: 3, minutes: 165 },
-    { weekStart: '2025-11-10', workouts: 4, minutes: 210 },
-    { weekStart: '2025-11-17', workouts: 4, minutes: 205 }
-  ]
-}
+// ---------- FORMULARIO DE PROGRESO MENSUAL ----------
+const now = new Date()
+const progressForm = reactive({
+  year: now.getFullYear(),
+  month: now.getMonth() + 1,
+  weight: null,
+  workoutsCount: null,
+  minutesTrained: null
+})
 
-// ------------- COMPUTEDS -------------
-const weightSeries = computed(() => progress.value?.weightProgress || [])
-const workoutSeries = computed(() => progress.value?.workoutProgress || [])
+// ---------- MAPEO A SERIES PARA GRÁFICOS ----------
+const weightSeries = computed(() =>
+  progressEntries.value
+    .filter(e => e.weight != null)
+    .sort((a, b) => {
+      if (a.year === b.year) return a.month - b.month
+      return a.year - b.year
+    })
+    .map(e => ({
+      date: `${e.year}-${String(e.month).padStart(2, '0')}-01`,
+      weight: e.weight
+    }))
+)
+
+const workoutSeries = computed(() =>
+  progressEntries.value
+    .slice()
+    .sort((a, b) => {
+      if (a.year === b.year) return a.month - b.month
+      return a.year - b.year
+    })
+    .map(e => ({
+      weekStart: `${e.year}-${String(e.month).padStart(2, '0')}-01`,
+      workouts: e.workoutsCount ?? 0,
+      minutes: e.minutesTrained ?? 0
+    }))
+)
 
 const startWeight = computed(() =>
   weightSeries.value.length ? weightSeries.value[0].weight : null
 )
 const currentWeight = computed(() =>
-  weightSeries.value.length ? weightSeries.value[weightSeries.value.length - 1].weight : null
+  weightSeries.value.length
+    ? weightSeries.value[weightSeries.value.length - 1].weight
+    : null
 )
 const weightDiff = computed(() =>
-  (startWeight.value != null && currentWeight.value != null)
-    ? (currentWeight.value - startWeight.value)
+  startWeight.value != null && currentWeight.value != null
+    ? currentWeight.value - startWeight.value
     : null
 )
 
-const totalWeeks = computed(() => workoutSeries.value.length)
-const weeksWith3Plus = computed(
+const totalPeriods = computed(() => workoutSeries.value.length)
+const periodsWith3Plus = computed(
   () => workoutSeries.value.filter(w => w.workouts >= 3).length
 )
 const adherencePercent = computed(() =>
-  totalWeeks.value
-    ? ((weeksWith3Plus.value / totalWeeks.value) * 100).toFixed(1)
+  totalPeriods.value
+    ? ((periodsWith3Plus.value / totalPeriods.value) * 100).toFixed(1)
     : '0.0'
 )
 
-// ------------- CARGA -----------------
+// ---------- CARGA PROGRESO DESDE /api/progress/user/:id ----------
 const loadProgress = async () => {
+  if (!usuarioActual.value) {
+    error.value = 'No hay usuario autenticado.'
+    return
+  }
+
   loading.value = true
   error.value = null
 
   try {
-    const { data } = await api.get('/stats/progress', authConfig.value)
-    progress.value = data
+    const userId = usuarioActual.value.id
+    const { data } = await api.get(`/progress/user/${userId}`, authConfig.value)
+    progressEntries.value = data || []
   } catch (e) {
-    console.error('Error cargando progreso, usando mock:', e.response?.data || e.message)
-    progress.value = mockProgress
-    showToast('No se pudo cargar /stats/progress, mostrando datos de ejemplo.', 'info')
+    console.error('Error cargando progreso:', e.response?.data || e.message)
+    error.value = 'No se pudo cargar tu progreso.'
+    progressEntries.value = []
   } finally {
     loading.value = false
-    // esperamos a que se pinte el template y existan los canvas
     await nextTick()
     buildWeightChart()
     buildMinutesChart()
   }
 }
 
-// ------------- GRÁFICOS ----------------
+// ---------- GUARDAR PROGRESO MENSUAL ----------
+const guardarProgresoMensual = async () => {
+  if (!usuarioActual.value) {
+    showToast('Tenés que iniciar sesión.', 'error')
+    return
+  }
+
+  const userId = usuarioActual.value.id
+  const { year, month, weight, workoutsCount, minutesTrained } = progressForm
+
+  if (!year || !month) {
+    showToast('Año y mes son obligatorios.', 'error')
+    return
+  }
+
+  try {
+    await api.post(
+      `/progress/user/${userId}`,
+      {
+        year: Number(year),
+        month: Number(month),
+        weight: weight !== null && weight !== '' ? Number(weight) : null,
+        workoutsCount:
+          workoutsCount !== null && workoutsCount !== '' ? Number(workoutsCount) : 0,
+        minutesTrained:
+          minutesTrained !== null && minutesTrained !== '' ? Number(minutesTrained) : 0
+      },
+      authConfig.value
+    )
+
+    showToast('Progreso mensual guardado correctamente.', 'success')
+
+    await loadProgress()
+  } catch (e) {
+    console.error('Error guardando progreso mensual:', e.response?.data || e.message)
+    showToast('No se pudo guardar el progreso.', 'error')
+  }
+}
+
+// ---------- GRÁFICOS ----------
 const buildWeightChart = () => {
-  if (!weightChartRef.value || !weightSeries.value.length) return
+  if (!weightChartRef.value || !weightSeries.value.length) {
+    if (weightChartInstance) {
+      weightChartInstance.destroy()
+      weightChartInstance = null
+    }
+    return
+  }
 
   if (weightChartInstance) {
     weightChartInstance.destroy()
@@ -144,7 +212,13 @@ const buildWeightChart = () => {
 }
 
 const buildMinutesChart = () => {
-  if (!minutesChartRef.value || !workoutSeries.value.length) return
+  if (!minutesChartRef.value || !workoutSeries.value.length) {
+    if (minutesChartInstance) {
+      minutesChartInstance.destroy()
+      minutesChartInstance = null
+    }
+    return
+  }
 
   if (minutesChartInstance) {
     minutesChartInstance.destroy()
@@ -162,11 +236,11 @@ const buildMinutesChart = () => {
       labels,
       datasets: [
         {
-          label: 'Entrenos / semana',
+          label: 'Entrenos / periodo',
           data: workoutsData
         },
         {
-          label: 'Minutos / semana',
+          label: 'Minutos / periodo',
           data: minutesData
         }
       ]
@@ -192,99 +266,145 @@ const buildMinutesChart = () => {
   })
 }
 
-// ------------- LIFECYCLE -------------
 onMounted(() => {
   loadProgress()
 })
 </script>
 
 <template>
-  <main class="progress">
+  <!-- ⚠️ OJO: clase cambiada a progress-page -->
+  <main class="progress-page">
     <header class="progress__header">
       <h1>Mi progreso</h1>
       <p>Seguimiento de tu evolución en el tiempo.</p>
     </header>
 
-    <section v-if="error" class="progress__error">
+    <p v-if="error" class="progress__error">
       {{ error }}
-    </section>
+    </p>
 
-    <section v-else class="progress__content">
+    <section class="progress__content">
       <div v-if="loading" class="text-muted">Cargando progreso...</div>
 
-      <div v-else-if="progress" class="progress__grid">
-        <!-- KPIs -->
-        <div class="progress__cards">
-          <div class="progress-card">
-            <span class="progress-card__label">Peso inicial</span>
-            <span class="progress-card__value">
-              {{ startWeight ?? '—' }} <span v-if="startWeight">kg</span>
-            </span>
-          </div>
-          <div class="progress-card">
-            <span class="progress-card__label">Peso actual</span>
-            <span class="progress-card__value">
-              {{ currentWeight ?? '—' }} <span v-if="currentWeight">kg</span>
-            </span>
-          </div>
-          <div class="progress-card">
-            <span class="progress-card__label">Diferencia total</span>
-            <span
-              class="progress-card__value"
-              :class="{
-                'progress-card__value--down': weightDiff < 0,
-                'progress-card__value--up': weightDiff > 0
-              }"
-            >
-              <template v-if="weightDiff != null">
-                {{ weightDiff > 0 ? '+' : '' }}{{ weightDiff.toFixed(1) }} kg
-              </template>
-              <template v-else>—</template>
-            </span>
-          </div>
-          <div class="progress-card">
-            <span class="progress-card__label">Adherencia</span>
-            <span class="progress-card__value">
-              {{ adherencePercent }} %
-            </span>
-            <small class="progress-card__sub">
-              Semanas con 3+ entrenos: {{ weeksWith3Plus }}/{{ totalWeeks }}
-            </small>
-          </div>
-        </div>
-
-        <!-- Gráficos -->
-        <div class="progress__charts">
-          <div class="progress__card">
-            <h2>Evolución del peso corporal</h2>
-            <canvas ref="weightChartRef" height="120" />
-          </div>
-
-          <div class="progress__card">
-            <h2>Actividad semanal</h2>
-            <canvas ref="minutesChartRef" height="120" />
-          </div>
-        </div>
-
-        <!-- Timeline simple -->
-        <div class="progress__card progress__timeline">
-          <h2>Resumen por semana</h2>
-          <ul v-if="workoutSeries.length" class="timeline-list">
-            <li v-for="w in workoutSeries" :key="w.weekStart" class="timeline-item">
-              <div class="timeline-item__date">
-                Semana del {{ new Date(w.weekStart).toLocaleDateString() }}
-              </div>
-              <div class="timeline-item__body">
-                <p>
-                  <strong>{{ w.workouts }}</strong> entrenos –
-                  <strong>{{ w.minutes }}</strong> min totales.
-                </p>
-              </div>
-            </li>
-          </ul>
-          <p v-else class="text-muted">
-            Todavía no hay semanas registradas en tu progreso.
+      <div v-else class="progress__grid">
+        <!-- FORMULARIO PROGRESO -->
+        <div class="progress__card progress__form-card">
+          <h2>Actualizar progreso mensual</h2>
+          <p class="progress__form-help">
+            Estos datos alimentan tus estadísticas y gráficos. Podés registrar un mes nuevo
+            o actualizar uno existente.
           </p>
+
+          <form class="progress-form" @submit.prevent="guardarProgresoMensual">
+            <div class="progress-form__row">
+              <div>
+                <label>Año</label>
+                <input v-model.number="progressForm.year" type="number" min="2000" />
+              </div>
+              <div>
+                <label>Mes</label>
+                <select v-model.number="progressForm.month">
+                  <option v-for="m in 12" :key="m" :value="m">
+                    {{ m }}
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label>Peso (kg)</label>
+                <input v-model.number="progressForm.weight" type="number" step="0.1" />
+              </div>
+            </div>
+
+            <div class="progress-form__row">
+              <div>
+                <label>Entrenos en el mes</label>
+                <input v-model.number="progressForm.workoutsCount" type="number" min="0" />
+              </div>
+              <div>
+                <label>Minutos entrenados</label>
+                <input v-model.number="progressForm.minutesTrained" type="number" min="0" />
+              </div>
+              <div class="progress-form__actions">
+                <button class="primary-btn" type="submit">
+                  Guardar progreso
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- SECCIONES SOLO SI HAY PROGRESO -->
+        <div class="progress__sections">
+          <div v-if="progressEntries.length" class="progress__cards">
+            <div class="progress-card">
+              <span class="progress-card__label">Peso inicial</span>
+              <span class="progress-card__value">
+                {{ startWeight ?? '—' }} <span v-if="startWeight">kg</span>
+              </span>
+            </div>
+            <div class="progress-card">
+              <span class="progress-card__label">Peso actual</span>
+              <span class="progress-card__value">
+                {{ currentWeight ?? '—' }} <span v-if="currentWeight">kg</span>
+              </span>
+            </div>
+            <div class="progress-card">
+              <span class="progress-card__label">Diferencia total</span>
+              <span
+                class="progress-card__value"
+                :class="{
+                  'progress-card__value--down': weightDiff < 0,
+                  'progress-card__value--up': weightDiff > 0
+                }"
+              >
+                <template v-if="weightDiff != null">
+                  {{ weightDiff > 0 ? '+' : '' }}{{ weightDiff.toFixed(1) }} kg
+                </template>
+                <template v-else>—</template>
+              </span>
+            </div>
+            <div class="progress-card">
+              <span class="progress-card__label">Adherencia</span>
+              <span class="progress-card__value">
+                {{ adherencePercent }} %
+              </span>
+              <small class="progress-card__sub">
+                Periodos con 3+ entrenos: {{ periodsWith3Plus }}/{{ totalPeriods }}
+              </small>
+            </div>
+          </div>
+
+          <div v-if="progressEntries.length" class="progress__charts">
+            <div class="progress__card">
+              <h2>Evolución del peso corporal</h2>
+              <canvas ref="weightChartRef" height="120" />
+            </div>
+
+            <div class="progress__card">
+              <h2>Actividad por periodo</h2>
+              <canvas ref="minutesChartRef" height="120" />
+            </div>
+          </div>
+
+          <div class="progress__card progress__timeline">
+            <h2>Resumen por periodo</h2>
+            <ul v-if="workoutSeries.length" class="timeline-list">
+              <li v-for="w in workoutSeries" :key="w.weekStart" class="timeline-item">
+                <div class="timeline-item__date">
+                  Periodo {{ new Date(w.weekStart).toLocaleDateString() }}
+                </div>
+                <div class="timeline-item__body">
+                  <p>
+                    <strong>{{ w.workouts }}</strong> entrenos –
+                    <strong>{{ w.minutes }}</strong> min totales.
+                  </p>
+                </div>
+              </li>
+            </ul>
+            <p v-else class="text-muted">
+              Todavía no registraste progreso. Completá el formulario de arriba para empezar.
+            </p>
+          </div>
         </div>
       </div>
     </section>
@@ -292,7 +412,8 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.progress {
+/* nombre cambiado: progress-page */
+.progress-page {
   padding: 2rem 2.5rem;
   color: var(--color-text);
 }
@@ -307,11 +428,98 @@ onMounted(() => {
   color: var(--color-text-muted);
 }
 
+.progress__error {
+  margin-top: 0.75rem;
+  color: #f97373;
+  font-size: 0.9rem;
+}
+
 .progress__content {
   margin-top: 2rem;
 }
 
 .progress__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* TARJETA FORMULARIO */
+.progress__form-card {
+  margin-bottom: 0.5rem;
+}
+
+.progress__card {
+  background: rgba(15, 23, 42, 0.9);
+  border-radius: 1rem;
+  padding: 1.2rem 1.3rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+}
+
+.progress__card h2 {
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.progress__form-help {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.7rem;
+}
+
+.progress-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.progress-form__row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.progress-form__row > div {
+  flex: 1;
+}
+
+.progress-form label {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.progress-form input,
+.progress-form select {
+  width: 100%;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(15, 23, 42, 0.9);
+  padding: 0.45rem 0.7rem;
+  font-size: 0.85rem;
+  color: var(--color-text);
+}
+
+.progress-form__actions {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.primary-btn {
+  border-radius: 999px;
+  padding: 0.45rem 1.2rem;
+  font-size: 0.85rem;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #22d3ee, #0ea5e9);
+  color: #020617;
+  font-weight: 600;
+}
+
+/* CONTENIDO PRINCIPAL */
+.progress__sections {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -366,19 +574,6 @@ onMounted(() => {
   gap: 1rem;
 }
 
-.progress__card {
-  background: rgba(15, 23, 42, 0.9);
-  border-radius: 1rem;
-  padding: 1.2rem 1.3rem;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
-}
-
-.progress__card h2 {
-  font-size: 1rem;
-  margin-bottom: 0.75rem;
-}
-
 /* Timeline */
 .progress__timeline {
   margin-top: 0.5rem;
@@ -431,6 +626,9 @@ onMounted(() => {
   }
   .progress__charts {
     grid-template-columns: 1fr;
+  }
+  .progress-form__row {
+    flex-direction: column;
   }
 }
 </style>

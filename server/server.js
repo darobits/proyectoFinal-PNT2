@@ -5,6 +5,8 @@ const authRoutes = require('./src/routes/auth.routes')
 const usersRoutes = require('./src/routes/users.routes')
 const routinesRoutes = require('./src/routes/routines.routes')
 const progressRoutes = require('./src/routes/progress.routes')
+const statsRoutes = require('./src/routes/stats.routes')
+
 
 const app = express()
 
@@ -16,6 +18,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/users', usersRoutes)
 app.use('/api/routines', routinesRoutes)
 app.use('/api/progress', progressRoutes)
+app.use('/api/stats', statsRoutes)
 
 // Ruta de prueba
 app.get('/api/ping', (req, res) => {

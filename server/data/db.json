@@ -135,6 +135,60 @@
       "weight": 80,
       "workoutsCount": 10,
       "minutesTrained": 420
+    },
+    {
+      "id": 2,
+      "userId": 1,
+      "year": 2024,
+      "month": 6,
+      "weight": 78,
+      "workoutsCount": 3,
+      "minutesTrained": 55
+    },
+    {
+      "id": 3,
+      "userId": 1,
+      "year": 2024,
+      "month": 11,
+      "weight": 78,
+      "workoutsCount": 3,
+      "minutesTrained": 55
+    },
+    {
+      "id": 4,
+      "userId": 1,
+      "year": 2024,
+      "month": 10,
+      "weight": 78,
+      "workoutsCount": 3,
+      "minutesTrained": 55
+    },
+    {
+      "id": 5,
+      "userId": 1,
+      "year": 2024,
+      "month": 2,
+      "weight": 78,
+      "workoutsCount": 3,
+      "minutesTrained": 55
+    },
+    {
+      "id": 6,
+      "userId": 1,
+      "year": 2025,
+      "month": 8,
+      "weight": 45,
+      "workoutsCount": 21,
+      "minutesTrained": 34
+    },
+    {
+      "id": 7,
+      "userId": 1,
+      "year": 2025,
+      "month": 9,
+      "weight": 45,
+      "workoutsCount": 21,
+      "minutesTrained": 34
     }
   ]
 }
