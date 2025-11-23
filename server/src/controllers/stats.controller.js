@@ -1,8 +1,12 @@
+// server/src/controllers/stats.controller.js
 const { readDb } = require('../db')
 
 /**
  * GET /api/stats/overview
- * Usa db.progress y db.users
+ * Usa:
+ *   - db.progress        → mensual (ya agregado)
+ *   - db.weeklyProgress  → semanal
+ *   - db.dailyProgress   → grupos musculares
  */
 exports.getOverview = (req, res) => {
   try {
@@ -12,61 +16,81 @@ exports.getOverview = (req, res) => {
     const user = db.users.find(u => u.id === userId)
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' })
 
-    // Progreso del usuario
-    const entries = db.progress
+    // ── Mensual (colección progress) ──────────────────────────────
+    const monthly = (db.progress || [])
       .filter(p => p.userId === userId)
       .sort((a, b) => {
         if (a.year === b.year) return a.month - b.month
         return a.year - b.year
       })
 
-    // ---------- SUMMARY ----------
     let totalWorkouts = 0
     let totalMinutes = 0
 
-    entries.forEach(e => {
+    monthly.forEach(e => {
       totalWorkouts += e.workoutsCount || 0
       totalMinutes += e.minutesTrained || 0
     })
 
-    const avgWorkoutsPerMonth = entries.length
-      ? totalWorkouts / entries.length
+    const avgWorkoutsPerWeek = monthly.length
+      ? totalWorkouts / (monthly.length * 4) // aproximación: 4 semanas por mes
       : 0
 
-    // peso actual = último del progreso o el del perfil si no hay progreso
-    const currentWeight = entries.length
-      ? entries[entries.length - 1].weight
+    const currentWeight = monthly.length
+      ? monthly[monthly.length - 1].weight
       : user.currentWeight ?? null
 
-    // peso hace 30 días = aproximación usando último mes anterior
     let weightDiffLast30Days = 0
-    if (entries.length >= 2) {
-      const last = entries[entries.length - 1].weight
-      const prev = entries[entries.length - 2].weight
-      weightDiffLast30Days = Number((last - prev).toFixed(1))
+    if (monthly.length >= 2) {
+      const last = monthly[monthly.length - 1].weight
+      const prev = monthly[monthly.length - 2].weight
+      if (last != null && prev != null) {
+        weightDiffLast30Days = Number((last - prev).toFixed(1))
+      }
     }
 
-    // ---------- AGRUPADO POR MES para gráficos ----------
-    const byMonth = entries.map(e => ({
-      year: e.year,
-      month: e.month,
-      workouts: e.workoutsCount,
-      minutes: e.minutesTrained
+    // ── Semanal (weeklyProgress) ─────────────────────────────────
+    const weekly = (db.weeklyProgress || [])
+      .filter(w => w.userId === userId)
+      .sort((a, b) => {
+        if (a.year === b.year) return a.week - b.week
+        return a.year - b.year
+      })
+
+    const byWeek = weekly.map(w => ({
+      weekStart: w.weekStart,
+      weekEnd: w.weekEnd,
+      workouts: w.workoutsCount,
+      minutes: w.minutesTrained,
+      volume: null,
+      avgWeight: w.avgWeight
     }))
 
-    // ---------- AGRUPACIÓN POR RUTINA ASOCIADA? ----------
-    // Si no querés rutinas, lo dejamos vacío.
-    const byMuscleGroup = []
+    // ── Distribución por grupo muscular (desde dailyProgress) ────
+    const daily = (db.dailyProgress || []).filter(d => d.userId === userId)
+    const muscleCounter = {}
+
+    daily.forEach(d => {
+      const groups = Array.isArray(d.muscleGroups) ? d.muscleGroups : []
+      groups.forEach(g => {
+        const key = g.toLowerCase()
+        muscleCounter[key] = (muscleCounter[key] || 0) + 1
+      })
+    })
+
+    const byMuscleGroup = Object.entries(muscleCounter).map(
+      ([muscleGroup, sessions]) => ({ muscleGroup, sessions })
+    )
 
     return res.json({
       summary: {
         totalWorkouts,
         totalMinutes,
-        avgWorkoutsPerMonth,
+        avgWorkoutsPerWeek,
         currentWeight,
         weightDiffLast30Days
       },
-      byMonth,
+      byWeek,
       byMuscleGroup
     })
   } catch (err) {
@@ -77,37 +101,33 @@ exports.getOverview = (req, res) => {
 
 /**
  * GET /api/stats/progress
- * Devuelve estructura para gráficos de "Mi Progreso"
+ * De momento lo dejamos simple y devolvemos las curvas
+ * mensual a partir de db.progress (por si querés usarlo después).
  */
 exports.getProgress = (req, res) => {
   try {
     const db = readDb()
     const userId = req.user.id
 
-    const entries = db.progress
+    const monthly = (db.progress || [])
       .filter(p => p.userId === userId)
       .sort((a, b) => {
         if (a.year === b.year) return a.month - b.month
         return a.year - b.year
       })
 
-    // Línea de tiempo de peso
-    const weightProgress = entries.map(e => ({
+    const weightProgress = monthly.map(e => ({
       date: `${e.year}-${String(e.month).padStart(2, '0')}-01`,
       weight: e.weight
     }))
 
-    // Línea de tiempo de entrenamientos/minutos
-    const workoutProgress = entries.map(e => ({
+    const workoutProgress = monthly.map(e => ({
       date: `${e.year}-${String(e.month).padStart(2, '0')}-01`,
       workouts: e.workoutsCount,
       minutes: e.minutesTrained
     }))
 
-    res.json({
-      weightProgress,
-      workoutProgress
-    })
+    res.json({ weightProgress, workoutProgress })
   } catch (err) {
     console.error('[Stats Progress Error]', err)
     res.status(500).json({ error: 'Error generando progreso' })

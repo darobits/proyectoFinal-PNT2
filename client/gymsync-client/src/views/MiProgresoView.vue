@@ -23,78 +23,104 @@ const usuarioActual = computed(() => store.state.auth.usuarioActual)
 
 const loading = ref(false)
 const error = ref(null)
-const progressEntries = ref([]) // viene directo de /api/progress/user/:id
+
+// colecciones separadas
+const dailyEntries = ref([])
+const weeklyEntries = ref([])
+const monthlyEntries = ref([])
 
 // refs gráficos
 const weightChartRef = ref(null)
-const minutesChartRef = ref(null)
+const weeklyChartRef = ref(null)
 
 let weightChartInstance = null
-let minutesChartInstance = null
+let weeklyChartInstance = null
 
-// ---------- FORMULARIO DE PROGRESO MENSUAL ----------
-const now = new Date()
-const progressForm = reactive({
-  year: now.getFullYear(),
-  month: now.getMonth() + 1,
+// ---------- FORMULARIO DE PROGRESO DIARIO ----------
+const today = new Date()
+  .toISOString()
+  .slice(0, 10) // YYYY-MM-DD
+
+const dailyForm = reactive({
+  date: today,
   weight: null,
   workoutsCount: null,
-  minutesTrained: null
+  minutesTrained: null,
+  muscleGroupsText: ''
 })
 
-// ---------- MAPEO A SERIES PARA GRÁFICOS ----------
-const weightSeries = computed(() =>
-  progressEntries.value
-    .filter(e => e.weight != null)
-    .sort((a, b) => {
-      if (a.year === b.year) return a.month - b.month
-      return a.year - b.year
-    })
-    .map(e => ({
-      date: `${e.year}-${String(e.month).padStart(2, '0')}-01`,
-      weight: e.weight
-    }))
+// ---------- SERIES / COMPUTEDS ----------
+
+// daily ordenado
+const sortedDaily = computed(() =>
+  dailyEntries.value
+    .slice()
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
 )
 
-const workoutSeries = computed(() =>
-  progressEntries.value
-    .slice()
-    .sort((a, b) => {
-      if (a.year === b.year) return a.month - b.month
-      return a.year - b.year
-    })
-    .map(e => ({
-      weekStart: `${e.year}-${String(e.month).padStart(2, '0')}-01`,
-      workouts: e.workoutsCount ?? 0,
-      minutes: e.minutesTrained ?? 0
+// para gráfico de peso
+const weightSeries = computed(() =>
+  sortedDaily.value
+    .filter(d => d.weight != null)
+    .map(d => ({
+      date: d.date,
+      weight: d.weight
     }))
 )
 
 const startWeight = computed(() =>
   weightSeries.value.length ? weightSeries.value[0].weight : null
 )
+
 const currentWeight = computed(() =>
   weightSeries.value.length
     ? weightSeries.value[weightSeries.value.length - 1].weight
     : null
 )
+
 const weightDiff = computed(() =>
   startWeight.value != null && currentWeight.value != null
     ? currentWeight.value - startWeight.value
     : null
 )
 
-const totalPeriods = computed(() => workoutSeries.value.length)
-const periodsWith3Plus = computed(
-  () => workoutSeries.value.filter(w => w.workouts >= 3).length
+// weekly para adherencia + gráfico
+const weeklySeries = computed(() =>
+  weeklyEntries.value
+    .slice()
+    .sort((a, b) => {
+      if (a.year === b.year) return a.week - b.week
+      return a.year - b.year
+    })
+    .map(w => ({
+      weekStart: w.weekStart,
+      weekEnd: w.weekEnd,
+      workouts: w.workoutsCount ?? 0,
+      minutes: w.minutesTrained ?? 0
+    }))
+)
+
+const totalWeeks = computed(() => weeklySeries.value.length)
+const weeksWith3Plus = computed(
+  () => weeklySeries.value.filter(w => w.workouts >= 3).length
 )
 const adherencePercent = computed(() =>
-  totalPeriods.value
-    ? ((periodsWith3Plus.value / totalPeriods.value) * 100).toFixed(1)
+  totalWeeks.value
+    ? ((weeksWith3Plus.value / totalWeeks.value) * 100).toFixed(1)
     : '0.0'
 )
 
-// ---------- CARGA PROGRESO DESDE /api/progress/user/:id ----------
+// timeline mensual
+const monthlyTimeline = computed(() =>
+  monthlyEntries.value
+    .slice()
+    .sort((a, b) => {
+      if (a.year === b.year) return a.month - b.month
+      return a.year - b.year
+    })
+)
+
+// ---------- CARGAR PROGRESO (daily / weekly / monthly) ----------
 const loadProgress = async () => {
   if (!usuarioActual.value) {
     error.value = 'No hay usuario autenticado.'
@@ -106,55 +132,73 @@ const loadProgress = async () => {
 
   try {
     const userId = usuarioActual.value.id
-    const { data } = await api.get(`/progress/user/${userId}`, authConfig.value)
-    progressEntries.value = data || []
+
+    const [dailyRes, weeklyRes, monthlyRes] = await Promise.all([
+      api.get(`/progress/daily/${userId}`, authConfig.value),
+      api.get(`/progress/weekly/${userId}`, authConfig.value),
+      api.get(`/progress/monthly/${userId}`, authConfig.value)
+    ])
+
+    dailyEntries.value = dailyRes.data || []
+    weeklyEntries.value = weeklyRes.data || []
+    monthlyEntries.value = monthlyRes.data || []
   } catch (e) {
     console.error('Error cargando progreso:', e.response?.data || e.message)
     error.value = 'No se pudo cargar tu progreso.'
-    progressEntries.value = []
+    dailyEntries.value = []
+    weeklyEntries.value = []
+    monthlyEntries.value = []
   } finally {
     loading.value = false
     await nextTick()
     buildWeightChart()
-    buildMinutesChart()
+    buildWeeklyChart()
   }
 }
 
-// ---------- GUARDAR PROGRESO MENSUAL ----------
-const guardarProgresoMensual = async () => {
+// ---------- GUARDAR PROGRESO DIARIO ----------
+const guardarProgresoDiario = async () => {
   if (!usuarioActual.value) {
     showToast('Tenés que iniciar sesión.', 'error')
     return
   }
 
   const userId = usuarioActual.value.id
-  const { year, month, weight, workoutsCount, minutesTrained } = progressForm
+  const { date, weight, workoutsCount, minutesTrained, muscleGroupsText } = dailyForm
 
-  if (!year || !month) {
-    showToast('Año y mes son obligatorios.', 'error')
+  if (!date) {
+    showToast('La fecha es obligatoria.', 'error')
     return
   }
 
+  const muscleGroups = muscleGroupsText
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+
   try {
     await api.post(
-      `/progress/user/${userId}`,
+      `/progress/daily/${userId}`,
       {
-        year: Number(year),
-        month: Number(month),
+        date,
         weight: weight !== null && weight !== '' ? Number(weight) : null,
         workoutsCount:
-          workoutsCount !== null && workoutsCount !== '' ? Number(workoutsCount) : 0,
+          workoutsCount !== null && workoutsCount !== ''
+            ? Number(workoutsCount)
+            : 0,
         minutesTrained:
-          minutesTrained !== null && minutesTrained !== '' ? Number(minutesTrained) : 0
+          minutesTrained !== null && minutesTrained !== ''
+            ? Number(minutesTrained)
+            : 0,
+        muscleGroups
       },
       authConfig.value
     )
 
-    showToast('Progreso mensual guardado correctamente.', 'success')
-
+    showToast('Progreso diario guardado correctamente.', 'success')
     await loadProgress()
   } catch (e) {
-    console.error('Error guardando progreso mensual:', e.response?.data || e.message)
+    console.error('Error guardando progreso diario:', e.response?.data || e.message)
     showToast('No se pudo guardar el progreso.', 'error')
   }
 }
@@ -211,36 +255,36 @@ const buildWeightChart = () => {
   })
 }
 
-const buildMinutesChart = () => {
-  if (!minutesChartRef.value || !workoutSeries.value.length) {
-    if (minutesChartInstance) {
-      minutesChartInstance.destroy()
-      minutesChartInstance = null
+const buildWeeklyChart = () => {
+  if (!weeklyChartRef.value || !weeklySeries.value.length) {
+    if (weeklyChartInstance) {
+      weeklyChartInstance.destroy()
+      weeklyChartInstance = null
     }
     return
   }
 
-  if (minutesChartInstance) {
-    minutesChartInstance.destroy()
+  if (weeklyChartInstance) {
+    weeklyChartInstance.destroy()
   }
 
-  const labels = workoutSeries.value.map(w =>
+  const labels = weeklySeries.value.map(w =>
     new Date(w.weekStart).toLocaleDateString()
   )
-  const workoutsData = workoutSeries.value.map(w => w.workouts)
-  const minutesData = workoutSeries.value.map(w => w.minutes)
+  const workoutsData = weeklySeries.value.map(w => w.workouts)
+  const minutesData = weeklySeries.value.map(w => w.minutes)
 
-  minutesChartInstance = new Chart(minutesChartRef.value.getContext('2d'), {
+  weeklyChartInstance = new Chart(weeklyChartRef.value.getContext('2d'), {
     type: 'bar',
     data: {
       labels,
       datasets: [
         {
-          label: 'Entrenos / periodo',
+          label: 'Entrenos / semana',
           data: workoutsData
         },
         {
-          label: 'Minutos / periodo',
+          label: 'Minutos / semana',
           data: minutesData
         }
       ]
@@ -272,11 +316,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <!-- ⚠️ OJO: clase cambiada a progress-page -->
+  <!-- importante: nada se llama .progress a secas -->
   <main class="progress-page">
     <header class="progress__header">
       <h1>Mi progreso</h1>
-      <p>Seguimiento de tu evolución en el tiempo.</p>
+      <p>Registro diario y resumen semanal / mensual.</p>
     </header>
 
     <p v-if="error" class="progress__error">
@@ -287,55 +331,63 @@ onMounted(() => {
       <div v-if="loading" class="text-muted">Cargando progreso...</div>
 
       <div v-else class="progress__grid">
-        <!-- FORMULARIO PROGRESO -->
+        <!-- FORMULARIO PROGRESO DIARIO -->
         <div class="progress__card progress__form-card">
-          <h2>Actualizar progreso mensual</h2>
+          <h2>Registrar progreso diario</h2>
           <p class="progress__form-help">
-            Estos datos alimentan tus estadísticas y gráficos. Podés registrar un mes nuevo
-            o actualizar uno existente.
+            Guardá tu peso, entrenos y minutos de un día. A partir de esto se calculan tus
+            semanas y meses.
           </p>
 
-          <form class="progress-form" @submit.prevent="guardarProgresoMensual">
+          <form class="progress-form" @submit.prevent="guardarProgresoDiario">
             <div class="progress-form__row">
               <div>
-                <label>Año</label>
-                <input v-model.number="progressForm.year" type="number" min="2000" />
-              </div>
-              <div>
-                <label>Mes</label>
-                <select v-model.number="progressForm.month">
-                  <option v-for="m in 12" :key="m" :value="m">
-                    {{ m }}
-                  </option>
-                </select>
+                <label>Fecha</label>
+                <input v-model="dailyForm.date" type="date" />
               </div>
               <div>
                 <label>Peso (kg)</label>
-                <input v-model.number="progressForm.weight" type="number" step="0.1" />
+                <input v-model.number="dailyForm.weight" type="number" step="0.1" />
+              </div>
+              <div>
+                <label>Entrenos ese día</label>
+                <input
+                  v-model.number="dailyForm.workoutsCount"
+                  type="number"
+                  min="0"
+                />
               </div>
             </div>
 
             <div class="progress-form__row">
               <div>
-                <label>Entrenos en el mes</label>
-                <input v-model.number="progressForm.workoutsCount" type="number" min="0" />
+                <label>Minutos entrenados</label>
+                <input
+                  v-model.number="dailyForm.minutesTrained"
+                  type="number"
+                  min="0"
+                />
               </div>
               <div>
-                <label>Minutos entrenados</label>
-                <input v-model.number="progressForm.minutesTrained" type="number" min="0" />
+                <label>Grupos musculares (coma)</label>
+                <input
+                  v-model="dailyForm.muscleGroupsText"
+                  type="text"
+                  placeholder="Pecho, Espalda, Piernas"
+                />
               </div>
               <div class="progress-form__actions">
                 <button class="primary-btn" type="submit">
-                  Guardar progreso
+                  Guardar día
                 </button>
               </div>
             </div>
           </form>
         </div>
 
-        <!-- SECCIONES SOLO SI HAY PROGRESO -->
+        <!-- SECCIONES SI HAY DATA -->
         <div class="progress__sections">
-          <div v-if="progressEntries.length" class="progress__cards">
+          <div v-if="sortedDaily.length || weeklySeries.length" class="progress__cards">
             <div class="progress-card">
               <span class="progress-card__label">Peso inicial</span>
               <span class="progress-card__value">
@@ -364,45 +416,50 @@ onMounted(() => {
               </span>
             </div>
             <div class="progress-card">
-              <span class="progress-card__label">Adherencia</span>
+              <span class="progress-card__label">Adherencia semanal</span>
               <span class="progress-card__value">
                 {{ adherencePercent }} %
               </span>
               <small class="progress-card__sub">
-                Periodos con 3+ entrenos: {{ periodsWith3Plus }}/{{ totalPeriods }}
+                Semanas con 3+ entrenos: {{ weeksWith3Plus }}/{{ totalWeeks }}
               </small>
             </div>
           </div>
 
-          <div v-if="progressEntries.length" class="progress__charts">
+          <div v-if="sortedDaily.length || weeklySeries.length" class="progress__charts">
             <div class="progress__card">
               <h2>Evolución del peso corporal</h2>
               <canvas ref="weightChartRef" height="120" />
             </div>
 
             <div class="progress__card">
-              <h2>Actividad por periodo</h2>
-              <canvas ref="minutesChartRef" height="120" />
+              <h2>Actividad semanal</h2>
+              <canvas ref="weeklyChartRef" height="120" />
             </div>
           </div>
 
           <div class="progress__card progress__timeline">
-            <h2>Resumen por periodo</h2>
-            <ul v-if="workoutSeries.length" class="timeline-list">
-              <li v-for="w in workoutSeries" :key="w.weekStart" class="timeline-item">
+            <h2>Resumen mensual</h2>
+            <ul v-if="monthlyTimeline.length" class="timeline-list">
+              <li
+                v-for="m in monthlyTimeline"
+                :key="m.year + '-' + m.month"
+                class="timeline-item"
+              >
                 <div class="timeline-item__date">
-                  Periodo {{ new Date(w.weekStart).toLocaleDateString() }}
+                  {{ m.year }} – Mes {{ m.month }}
                 </div>
                 <div class="timeline-item__body">
                   <p>
-                    <strong>{{ w.workouts }}</strong> entrenos –
-                    <strong>{{ w.minutes }}</strong> min totales.
+                    <strong>{{ m.workoutsCount }}</strong> entrenos –
+                    <strong>{{ m.minutesTrained }}</strong> min.
+                    <span v-if="m.weight != null"> | peso fin de mes: {{ m.weight }} kg</span>
                   </p>
                 </div>
               </li>
             </ul>
             <p v-else class="text-muted">
-              Todavía no registraste progreso. Completá el formulario de arriba para empezar.
+              Todavía no registraste progreso. Guardá un día para empezar.
             </p>
           </div>
         </div>
@@ -412,7 +469,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* nombre cambiado: progress-page */
+/* nada se llama .progress a secas para no chocar con Bootstrap */
 .progress-page {
   padding: 2rem 2.5rem;
   color: var(--color-text);

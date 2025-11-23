@@ -4,7 +4,7 @@ import { useStore } from 'vuex'
 import axios from 'axios'
 import { useToast } from '../composables/useToast'
 
-// Chart.js: import simple que ya registra todo
+// Chart.js
 import Chart from 'chart.js/auto'
 
 // Exportar a Excel y PDF
@@ -37,7 +37,7 @@ const muscleChartRef = ref(null)
 let weeklyChartInstance = null
 let muscleChartInstance = null
 
-// --------- MOCK de respaldo si el backend todavía no está listo ---------
+// --------- MOCK de respaldo si el backend falla ---------
 const mockOverview = {
   summary: {
     totalWorkouts: 18,
@@ -52,7 +52,6 @@ const mockOverview = {
       weekEnd: '2025-10-26',
       workouts: 3,
       minutes: 150,
-      volume: 12000,
       avgWeight: 79.6
     },
     {
@@ -60,7 +59,6 @@ const mockOverview = {
       weekEnd: '2025-11-02',
       workouts: 4,
       minutes: 200,
-      volume: 14200,
       avgWeight: 79.0
     },
     {
@@ -68,24 +66,7 @@ const mockOverview = {
       weekEnd: '2025-11-09',
       workouts: 3,
       minutes: 165,
-      volume: 13050,
       avgWeight: 78.5
-    },
-    {
-      weekStart: '2025-11-10',
-      weekEnd: '2025-11-16',
-      workouts: 4,
-      minutes: 210,
-      volume: 14800,
-      avgWeight: 78.2
-    },
-    {
-      weekStart: '2025-11-17',
-      weekEnd: '2025-11-23',
-      workouts: 4,
-      minutes: 205,
-      volume: 15000,
-      avgWeight: 78.2
     }
   ],
   byMuscleGroup: [
@@ -209,13 +190,12 @@ const buildMuscleChart = () => {
 
 // reconstruye los gráficos cuando cambia la data
 watch(overview, async () => {
-  // nos aseguramos de que los <canvas> ya estén montados
   await nextTick()
   buildWeeklyChart()
   buildMuscleChart()
 })
 
-// ----------------- EXPORTS -----------------
+// ----------------- EXPORTS (sin columna Volumen) -----------------
 const exportToExcel = () => {
   if (!weeklyRows.value.length) {
     showToast('No hay datos para exportar.', 'info')
@@ -227,7 +207,6 @@ const exportToExcel = () => {
     'Semana (fin)',
     'Entrenos',
     'Minutos',
-    'Volumen (kg)',
     'Peso promedio (kg)'
   ]
 
@@ -236,7 +215,6 @@ const exportToExcel = () => {
     w.weekEnd,
     w.workouts,
     w.minutes,
-    w.volume ?? '',
     w.avgWeight ?? ''
   ])
 
@@ -258,23 +236,19 @@ const exportToPdf = () => {
   doc.setFontSize(14)
   doc.text('Estadísticas de entrenamiento - GymSync', 14, 18)
 
-  const head = [
-    [
-      'Semana (inicio)',
-      'Semana (fin)',
-      'Entrenos',
-      'Minutos',
-      'Volumen (kg)',
-      'Peso promedio (kg)'
-    ]
-  ]
+  const head = [[
+    'Semana (inicio)',
+    'Semana (fin)',
+    'Entrenos',
+    'Minutos',
+    'Peso promedio (kg)'
+  ]]
 
   const body = weeklyRows.value.map(w => [
     w.weekStart,
     w.weekEnd,
     w.workouts,
     w.minutes,
-    w.volume ?? '',
     w.avgWeight ?? ''
   ])
 
@@ -377,7 +351,6 @@ onMounted(() => {
                 <th>Semana (fin)</th>
                 <th>Entrenos</th>
                 <th>Minutos</th>
-                <th>Volumen (kg)</th>
                 <th>Peso promedio (kg)</th>
               </tr>
             </thead>
@@ -387,7 +360,6 @@ onMounted(() => {
                 <td>{{ new Date(w.weekEnd).toLocaleDateString() }}</td>
                 <td>{{ w.workouts }}</td>
                 <td>{{ w.minutes }}</td>
-                <td>{{ w.volume ?? '—' }}</td>
                 <td>{{ w.avgWeight ?? '—' }}</td>
               </tr>
             </tbody>
