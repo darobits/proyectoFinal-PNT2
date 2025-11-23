@@ -33,11 +33,11 @@
       "email": "u1@mail.com",
       "password": "$2b$10$.VKX.RlX4wB8SASg6gujYeHe5wi6obKNsh9i2z1UHJPFJ9WawCDZ2",
       "role": "USER",
-      "age": null,
-      "height": null,
-      "currentWeight": null,
-      "goal": "",
-      "bio": "",
+      "age": 45,
+      "height": 175,
+      "currentWeight": 85,
+      "goal": "Ganar masa muscular",
+      "bio": "Me gusta el cardio hit",
       "friends": [
         1
       ]
@@ -328,6 +328,13 @@
       "toUserId": 5,
       "content": "Hola",
       "createdAt": "2025-11-23T19:53:13.280Z"
+    },
+    {
+      "id": 2,
+      "fromUserId": 5,
+      "toUserId": 1,
+      "content": "todo bien",
+      "createdAt": "2025-11-23T20:46:21.227Z"
     }
   ]
 }

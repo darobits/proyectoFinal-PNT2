@@ -6,7 +6,6 @@ import MisRutinasView from '../views/MisRutinasView.vue'
 import MiProgresoView from '../views/MiProgresoView.vue'
 import EstadisticasView from '../views/EstadisticasView.vue'
 import AdminPerfilesView from '../views/AdminPerfilesView.vue'
-import RutinaDetalleView from '../views/RutinaDetalleView.vue'
 import PerfilView from '../views/PerfilView.vue'
 import DiscoverView from '../views/DiscoverView.vue'
 import store from '../store'
@@ -23,6 +22,7 @@ const routes = [
 
   {
     path: '/mis-rutinas',
+    alias: '/misrutinas', 
     name: 'MisRutinas',
     component: MisRutinasView,
     meta: { requiereAuth: true }
@@ -40,7 +40,7 @@ const routes = [
     meta: { requiereAuth: true }
   },
 
-  // 🔹 NUEVA sección social
+  // Sección social
   {
     path: '/descubrir',
     name: 'Descubrir',
@@ -49,10 +49,24 @@ const routes = [
   },
 
   {
+    path: '/comunidad',
+    name: 'Friends',
+    component: () => import('../views/FriendsView.vue'),
+    meta: { requiereAuth: true }
+  },
+
+  {
+    path: '/comunidad/mensajes/:friendId',
+    name: 'Messages',
+    component: () => import('../views/MessagesView.vue'),
+    meta: { requiereAuth: true }
+  },
+
+  {
     path: '/admin/perfiles',
     name: 'AdminPerfiles',
     component: AdminPerfilesView,
-    meta: { requiereRol: 'ADMIN' }
+    meta: { requiereAuth: true, requiereRol: 'ADMIN' }
   },
 
   {
@@ -61,25 +75,12 @@ const routes = [
     component: PerfilView,
     meta: { requiereAuth: true }
   },
+   // ⛔ CATCH-ALL: cualquier ruta desconocida → LOGIN
   {
-    path: '/rutina/:id',
-    name: 'RutinaDetalle',
-    component: RutinaDetalleView,
-    props: true,
-    meta: { requiereAuth: true }
-  },
-  {
-  path: '/comunidad',
-  name: 'Friends',
-  component: () => import('../views/FriendsView.vue'),
-  meta: { requiresAuth: true } // y roles si usás allowedRoles
-},
-{
-  path: '/comunidad/mensajes/:friendId',
-  name: 'Messages',
-  component: () => import('../views/MessagesView.vue'),
-  meta: { requiresAuth: true }
+  path: '/:pathMatch(.*)*',
+  redirect: '/login'
 }
+
 ]
 
 const router = createRouter({
@@ -93,14 +94,17 @@ router.beforeEach((to) => {
   const estaLogueado = store.getters['auth/estaLogueado']
   const rolActual = store.getters['auth/rolActual']
 
+  // Si ya está logueado, evitar login/register
   if ((to.name === 'Login' || to.name === 'Register') && estaLogueado) {
     return { name: 'Feed' }
   }
 
+  // Si requiere auth y NO está logueado → Login
   if (requiereAuth && !estaLogueado) {
     return { name: 'Login' }
   }
 
+  // Si requiere rol y no coincide → Feed
   if (requiereRol && rolActual !== requiereRol) {
     return { name: 'Feed' }
   }
