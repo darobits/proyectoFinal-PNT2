@@ -35,6 +35,18 @@
       "currentWeight": null,
       "goal": "",
       "bio": ""
+    },
+    {
+      "id": 6,
+      "name": "celina",
+      "email": "celina@mail.com",
+      "password": "$2b$10$pbeAuQjJLpxTh5dAscg3N.4LVmFMqd3HTZPb9lIod3DHzJfx1ZhLy",
+      "role": "USER",
+      "age": null,
+      "height": null,
+      "currentWeight": null,
+      "goal": "",
+      "bio": ""
     }
   ],
   "routines": [
@@ -90,7 +102,9 @@
       ],
       "isPublic": true,
       "allowCollab": true,
-      "pendingCollabIds": [],
+      "pendingCollabIds": [
+        6
+      ],
       "createdAt": "2025-11-22T23:29:01.820Z"
     },
     {
