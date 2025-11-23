@@ -164,11 +164,11 @@
       "userId": 1,
       "year": 2025,
       "month": 11,
-      "workoutsCount": 1,
-      "minutesTrained": 60,
-      "weight": 88,
-      "startWeight": 88,
-      "weightDiff": 0,
+      "workoutsCount": 8,
+      "minutesTrained": 117,
+      "weight": 87,
+      "startWeight": 85,
+      "weightDiff": 2,
       "id": 4
     }
   ],
@@ -217,6 +217,28 @@
       "muscleGroups": [
         "Abdomen"
       ]
+    },
+    {
+      "id": 5,
+      "userId": 1,
+      "date": "2025-11-12",
+      "weight": 85,
+      "workoutsCount": 2,
+      "minutesTrained": 37,
+      "muscleGroups": [
+        "Pie"
+      ]
+    },
+    {
+      "id": 6,
+      "userId": 1,
+      "date": "2025-11-16",
+      "weight": 87,
+      "workoutsCount": 5,
+      "minutesTrained": 20,
+      "muscleGroups": [
+        "Espalda"
+      ]
     }
   ],
   "weeklyProgress": [
@@ -258,11 +280,22 @@
       "year": 2025,
       "week": 46,
       "weekStart": "2025-11-13",
-      "weekEnd": "2025-11-13",
-      "workoutsCount": 1,
-      "minutesTrained": 60,
-      "avgWeight": 88,
+      "weekEnd": "2025-11-16",
+      "workoutsCount": 6,
+      "minutesTrained": 80,
+      "avgWeight": 87.5,
       "id": 4
+    },
+    {
+      "userId": 1,
+      "year": 2025,
+      "week": 45,
+      "weekStart": "2025-11-12",
+      "weekEnd": "2025-11-12",
+      "workoutsCount": 2,
+      "minutesTrained": 37,
+      "avgWeight": 85,
+      "id": 5
     }
   ]
 }

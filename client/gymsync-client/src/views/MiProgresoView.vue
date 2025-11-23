@@ -373,7 +373,7 @@ onMounted(() => {
                 <input
                   v-model="dailyForm.muscleGroupsText"
                   type="text"
-                  placeholder="Pecho, Espalda, Piernas"
+                  placeholder="Pecho, Espalda, Piernas, Triceps, Biceps"
                 />
               </div>
               <div class="progress-form__actions">
