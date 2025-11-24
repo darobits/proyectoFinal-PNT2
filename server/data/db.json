@@ -8,7 +8,7 @@
       "role": "ADMIN",
       "age": 24,
       "height": 175,
-      "currentWeight": 98,
+      "currentWeight": 87,
       "goal": "ejemplo1",
       "bio": "ejemplo1",
       "friends": [
@@ -21,9 +21,9 @@
       "email": "daro@mail.com",
       "password": "$2b$10$VYopJvOJsqyJ0QYxsKYWhOdL5wefDbVIZj7COycq94NHYQD.c7HP.",
       "role": "USER",
-      "age": null,
+      "age": 31,
       "height": null,
-      "currentWeight": null,
+      "currentWeight": 90,
       "goal": "",
       "bio": ""
     },
@@ -48,11 +48,58 @@
       "email": "celina@mail.com",
       "password": "$2b$10$pbeAuQjJLpxTh5dAscg3N.4LVmFMqd3HTZPb9lIod3DHzJfx1ZhLy",
       "role": "USER",
-      "age": null,
+      "age": 53,
       "height": null,
-      "currentWeight": null,
+      "currentWeight": 45,
       "goal": "",
       "bio": ""
+    },
+    {
+      "id": 7,
+      "name": "LuciaFit",
+      "email": "lucia@mail.com",
+      "password": "$2b$10$pbeAuQjJLpxTh5dAscg3N.4LVmFMqd3HTZPb9lIod3DHzJfx1ZhLy",
+      "role": "USER",
+      "age": 29,
+      "height": 165,
+      "currentWeight": 62,
+      "goal": "Definir y mejorar resistencia",
+      "bio": "Fan del HIIT y las clases funcionales",
+      "friends": [
+        1,
+        5
+      ]
+    },
+    {
+      "id": 8,
+      "name": "MaxPower",
+      "email": "max@mail.com",
+      "password": "$2b$10$pbeAuQjJLpxTh5dAscg3N.4LVmFMqd3HTZPb9lIod3DHzJfx1ZhLy",
+      "role": "USER",
+      "age": 32,
+      "height": 180,
+      "currentWeight": 90,
+      "goal": "Fuerza máxima y potencia",
+      "bio": "Amo el peso muerto y las sentadillas pesadas",
+      "friends": [
+        1
+      ]
+    },
+    {
+      "id": 9,
+      "name": "CoachPro",
+      "email": "coach@mail.com",
+      "password": "$2b$10$pbeAuQjJLpxTh5dAscg3N.4LVmFMqd3HTZPb9lIod3DHzJfx1ZhLy",
+      "role": "USER",
+      "age": 38,
+      "height": 178,
+      "currentWeight": 82,
+      "goal": "Mantener rendimiento y salud articular",
+      "bio": "Entrenador personal, enfoque en técnica y prevención de lesiones",
+      "friends": [
+        1,
+        7
+      ]
     }
   ],
   "routines": [
@@ -129,6 +176,111 @@
       "allowCollab": true,
       "pendingCollabIds": [],
       "createdAt": "2025-11-22T23:30:56.638Z"
+    },
+    {
+      "id": 5,
+      "title": "HIIT quemagrasa 20 min",
+      "description": "Circuito HIIT de cuerpo completo en 20 minutos, ideal para días con poco tiempo.",
+      "category": "Cardio",
+      "level": "Intermedio",
+      "creatorId": 7,
+      "collaboratorsIds": [
+        1
+      ],
+      "likedByIds": [
+        1,
+        5,
+        7
+      ],
+      "isPublic": true,
+      "allowCollab": true,
+      "pendingCollabIds": [],
+      "createdAt": "2025-11-24T10:15:00.000Z"
+    },
+    {
+      "id": 6,
+      "title": "Piernas de acero",
+      "description": "Rutina pesada de tren inferior: sentadillas, peso muerto rumano y zancadas.",
+      "category": "Piernas",
+      "level": "Avanzado",
+      "creatorId": 8,
+      "collaboratorsIds": [
+        1
+      ],
+      "likedByIds": [
+        1,
+        5,
+        8
+      ],
+      "isPublic": true,
+      "allowCollab": true,
+      "pendingCollabIds": [],
+      "createdAt": "2025-11-24T11:05:00.000Z"
+    },
+    {
+      "id": 7,
+      "title": "Espalda y bíceps strong",
+      "description": "Tirones pesados, dominadas asistidas y curls para potenciar la espalda y los brazos.",
+      "category": "Espalda",
+      "level": "Intermedio",
+      "creatorId": 9,
+      "collaboratorsIds": [
+        7
+      ],
+      "likedByIds": [
+        1,
+        7,
+        8,
+        9
+      ],
+      "isPublic": true,
+      "allowCollab": true,
+      "pendingCollabIds": [],
+      "createdAt": "2025-11-24T11:30:00.000Z"
+    },
+    {
+      "id": 8,
+      "title": "Core y estabilidad",
+      "description": "Trabajo de abdomen, zona media y estabilidad lumbar con bajo impacto.",
+      "category": "Core",
+      "level": "Principiante",
+      "creatorId": 7,
+      "collaboratorsIds": [
+        9
+      ],
+      "likedByIds": [
+        1,
+        5,
+        6,
+        7
+      ],
+      "isPublic": true,
+      "allowCollab": true,
+      "pendingCollabIds": [],
+      "createdAt": "2025-11-24T12:10:00.000Z"
+    },
+    {
+      "id": 9,
+      "title": "Full body avanzada",
+      "description": "Sesión intensa de cuerpo completo con énfasis en fuerza y técnica.",
+      "category": "Full body",
+      "level": "Avanzado",
+      "creatorId": 9,
+      "collaboratorsIds": [
+        1,
+        8
+      ],
+      "likedByIds": [
+        1,
+        5,
+        7,
+        8,
+        9
+      ],
+      "isPublic": true,
+      "allowCollab": true,
+      "pendingCollabIds": [],
+      "createdAt": "2025-11-24T12:45:00.000Z"
     }
   ],
   "progress": [
@@ -253,6 +405,65 @@
       "workoutsCount": 2,
       "minutesTrained": 0,
       "muscleGroups": []
+    },
+    {
+      "id": 8,
+      "userId": 1,
+      "date": "2025-11-17",
+      "weight": 86,
+      "workoutsCount": 3,
+      "minutesTrained": 50,
+      "muscleGroups": [
+        "Pecho",
+        "Hombros"
+      ]
+    },
+    {
+      "id": 9,
+      "userId": 1,
+      "date": "2025-11-19",
+      "weight": 86.5,
+      "workoutsCount": 2,
+      "minutesTrained": 40,
+      "muscleGroups": [
+        "Piernas",
+        "Abdomen"
+      ]
+    },
+    {
+      "id": 10,
+      "userId": 1,
+      "date": "2025-11-21",
+      "weight": 87,
+      "workoutsCount": 1,
+      "minutesTrained": 30,
+      "muscleGroups": [
+        "Cardio"
+      ]
+    },
+    {
+      "id": 11,
+      "userId": 5,
+      "date": "2025-11-15",
+      "weight": 85,
+      "workoutsCount": 2,
+      "minutesTrained": 60,
+      "muscleGroups": [
+        "Pecho",
+        "Espalda"
+      ]
+    },
+    {
+      "id": 12,
+      "userId": 5,
+      "date": "2025-11-22",
+      "weight": 84.5,
+      "workoutsCount": 3,
+      "minutesTrained": 70,
+      "muscleGroups": [
+        "Piernas",
+        "Hombros"
+      ]
     }
   ],
   "weeklyProgress": [
@@ -321,6 +532,28 @@
       "minutesTrained": 0,
       "avgWeight": null,
       "id": 6
+    },
+    {
+      "userId": 1,
+      "year": 2025,
+      "week": 48,
+      "weekStart": "2025-11-17",
+      "weekEnd": "2025-11-23",
+      "workoutsCount": 6,
+      "minutesTrained": 120,
+      "avgWeight": 86.5,
+      "id": 7
+    },
+    {
+      "userId": 5,
+      "year": 2025,
+      "week": 47,
+      "weekStart": "2025-11-15",
+      "weekEnd": "2025-11-22",
+      "workoutsCount": 5,
+      "minutesTrained": 130,
+      "avgWeight": 84.8,
+      "id": 8
     }
   ],
   "friendRequests": [

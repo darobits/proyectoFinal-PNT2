@@ -1,0 +1,8 @@
+{
+"scripts": {
+  "start": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client/gymsync-client\""
+},
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
