@@ -37,9 +37,7 @@ let weightChartInstance = null
 let weeklyChartInstance = null
 
 // ---------- FORMULARIO DE PROGRESO DIARIO ----------
-const today = new Date()
-  .toISOString()
-  .slice(0, 10) // YYYY-MM-DD
+const today = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
 
 const dailyForm = reactive({
   date: today,
@@ -316,12 +314,15 @@ onMounted(() => {
 </script>
 
 <template>
-  <!-- importante: nada se llama .progress a secas -->
   <main class="progress-page">
-    <header class="progress__header">
-      <h1>Mi progreso</h1>
-      <p>Registro diario y resumen semanal / mensual.</p>
-    </header>
+    <!-- HEADER TIPO "MIS RUTINAS" -->
+    <section class="card-dark mb-4">
+      <span class="accent-pill">progreso</span>
+      <h1 class="mt-2 mb-1">Mi progreso</h1>
+      <p class="text-muted mb-0">
+        Registro diario y resumen semanal / mensual para seguir tu evolución en GymSync.
+      </p>
+    </section>
 
     <p v-if="error" class="progress__error">
       {{ error }}
@@ -341,41 +342,55 @@ onMounted(() => {
 
           <form class="progress-form" @submit.prevent="guardarProgresoDiario">
             <div class="progress-form__row">
-              <div>
+              <div class="progress-form__field">
                 <label>Fecha</label>
-                <input v-model="dailyForm.date" type="date" />
+                <input
+                  v-model="dailyForm.date"
+                  type="date"
+                />
               </div>
-              <div>
+
+              <div class="progress-form__field">
                 <label>Peso (kg)</label>
-                <input v-model.number="dailyForm.weight" type="number" step="0.1" />
+                <input
+                  v-model.number="dailyForm.weight"
+                  type="number"
+                  step="0.1"
+                  placeholder="Ingresá tu peso actual en kg"
+                />
               </div>
-              <div>
+
+              <div class="progress-form__field">
                 <label>Entrenos ese día</label>
                 <input
                   v-model.number="dailyForm.workoutsCount"
                   type="number"
                   min="0"
+                  placeholder="¿Cuántos entrenos hiciste hoy?"
                 />
               </div>
             </div>
 
             <div class="progress-form__row">
-              <div>
+              <div class="progress-form__field">
                 <label>Minutos entrenados</label>
                 <input
                   v-model.number="dailyForm.minutesTrained"
                   type="number"
                   min="0"
+                  placeholder="Total de minutos entrenando en el día"
                 />
               </div>
-              <div>
-                <label>Grupos musculares (coma)</label>
+
+              <div class="progress-form__field">
+                <label>Grupos musculares</label>
                 <input
                   v-model="dailyForm.muscleGroupsText"
                   type="text"
-                  placeholder="Pecho, Espalda, Piernas, Triceps, Biceps"
+                  placeholder="Pecho, espalda, piernas, bíceps..."
                 />
               </div>
+
               <div class="progress-form__actions">
                 <button class="primary-btn" type="submit">
                   Guardar día
@@ -453,7 +468,9 @@ onMounted(() => {
                   <p>
                     <strong>{{ m.workoutsCount }}</strong> entrenos –
                     <strong>{{ m.minutesTrained }}</strong> min.
-                    <span v-if="m.weight != null"> | peso fin de mes: {{ m.weight }} kg</span>
+                    <span v-if="m.weight != null">
+                      | peso fin de mes: {{ m.weight }} kg
+                    </span>
                   </p>
                 </div>
               </li>
@@ -469,20 +486,9 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* nada se llama .progress a secas para no chocar con Bootstrap */
 .progress-page {
   padding: 2rem 2.5rem;
   color: var(--color-text);
-}
-
-.progress__header h1 {
-  font-size: 1.7rem;
-  margin-bottom: 0.25rem;
-}
-
-.progress__header p {
-  margin: 0;
-  color: var(--color-text-muted);
 }
 
 .progress__error {
@@ -492,7 +498,7 @@ onMounted(() => {
 }
 
 .progress__content {
-  margin-top: 2rem;
+  margin-top: 1rem;
 }
 
 .progress__grid {
@@ -522,13 +528,14 @@ onMounted(() => {
 .progress__form-help {
   font-size: 0.85rem;
   color: var(--color-text-muted);
-  margin-bottom: 0.7rem;
+  margin-bottom: 0.9rem;
 }
 
+/* === FORM HORIZONTAL CON PLACEHOLDERS CLAROS === */
 .progress-form {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.7rem;
 }
 
 .progress-form__row {
@@ -536,43 +543,57 @@ onMounted(() => {
   gap: 0.75rem;
 }
 
-.progress-form__row > div {
+.progress-form__field {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-.progress-form label {
+.progress-form__field label {
   font-size: 0.8rem;
   color: var(--color-text-muted);
-  display: block;
-  margin-bottom: 0.2rem;
 }
 
 .progress-form input,
 .progress-form select {
   width: 100%;
-  border-radius: 0.6rem;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  background: rgba(15, 23, 42, 0.9);
-  padding: 0.45rem 0.7rem;
-  font-size: 0.85rem;
-  color: var(--color-text);
+  border-radius: 0.7rem;
+  background:rgba(54, 64, 85, 0.95);; /* un poco más oscuro que blanco puro */
+  color: #111827;
+  border: 1px solid #d1d5db;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.88rem;
+}
+
+.progress-form input::placeholder {
+  color: #6b7280;
+}
+
+.progress-form input:focus,
+.progress-form select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
 }
 
 .progress-form__actions {
+  margin-top: 0.4rem;
   display: flex;
-  align-items: flex-end;
   justify-content: flex-end;
+  align-items: flex-end;
 }
 
 .primary-btn {
   border-radius: 999px;
-  padding: 0.45rem 1.2rem;
-  font-size: 0.85rem;
+  padding: 0.55rem 1.4rem;
+  font-size: 0.9rem;
   border: none;
   cursor: pointer;
   background: linear-gradient(135deg, #22d3ee, #0ea5e9);
   color: #020617;
   font-weight: 600;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.9);
 }
 
 /* CONTENIDO PRINCIPAL */

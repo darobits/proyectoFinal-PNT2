@@ -571,7 +571,7 @@ const goToChat = (friendId) => {
   flex: 1;
   border-radius: 999px;
   border: 1px solid rgba(148, 163, 184, 0.45);
-  background: rgba(15, 23, 42, 0.95);
+  background: rgba(48, 61, 92, 0.95);
   padding: 0.55rem 0.9rem;
   font-size: 0.9rem;
   color: #e5e7eb;

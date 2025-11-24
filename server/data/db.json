@@ -101,16 +101,15 @@
       "level": "fdd",
       "creatorId": 1,
       "collaboratorsIds": [
-        5
+        5,
+        6
       ],
       "likedByIds": [
         5
       ],
       "isPublic": true,
       "allowCollab": true,
-      "pendingCollabIds": [
-        6
-      ],
+      "pendingCollabIds": [],
       "createdAt": "2025-11-22T23:29:01.820Z"
     },
     {
@@ -170,11 +169,11 @@
       "userId": 1,
       "year": 2025,
       "month": 11,
-      "workoutsCount": 8,
+      "workoutsCount": 10,
       "minutesTrained": 117,
-      "weight": 87,
+      "weight": 85,
       "startWeight": 85,
-      "weightDiff": 2,
+      "weightDiff": 0,
       "id": 4
     }
   ],
@@ -245,6 +244,15 @@
       "muscleGroups": [
         "Espalda"
       ]
+    },
+    {
+      "id": 7,
+      "userId": 1,
+      "date": "2025-11-24",
+      "weight": null,
+      "workoutsCount": 2,
+      "minutesTrained": 0,
+      "muscleGroups": []
     }
   ],
   "weeklyProgress": [
@@ -302,6 +310,17 @@
       "minutesTrained": 37,
       "avgWeight": 85,
       "id": 5
+    },
+    {
+      "userId": 1,
+      "year": 2025,
+      "week": 47,
+      "weekStart": "2025-11-24",
+      "weekEnd": "2025-11-24",
+      "workoutsCount": 2,
+      "minutesTrained": 0,
+      "avgWeight": null,
+      "id": 6
     }
   ],
   "friendRequests": [
@@ -335,6 +354,13 @@
       "toUserId": 1,
       "content": "todo bien",
       "createdAt": "2025-11-23T20:46:21.227Z"
+    },
+    {
+      "id": 3,
+      "fromUserId": 1,
+      "toUserId": 5,
+      "content": "como estas",
+      "createdAt": "2025-11-24T00:47:36.593Z"
     }
   ]
 }

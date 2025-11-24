@@ -508,7 +508,7 @@ onMounted(() => {
 .form-row select {
   border-radius: 0.7rem;
   border: 1px solid rgba(148, 163, 184, 0.4);
-  background: rgba(15, 23, 42, 0.96);
+  background: rgba(77, 95, 144, 0.96);
   padding: 0.5rem 0.75rem;
   font-size: 0.86rem;
   color: #e5e7eb;

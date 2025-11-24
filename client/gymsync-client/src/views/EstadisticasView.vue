@@ -268,11 +268,15 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="stats">
-    <header class="stats__header">
-      <h1>Mis estadísticas</h1>
-      <p>Resumen de tu actividad en GymSync.</p>
-    </header>
+  <main class="stats-page">
+    <!-- HEADER TIPO "MIS RUTINAS / MI PROGRESO" -->
+    <section class="card-dark mb-4">
+      <span class="accent-pill">estadísticas</span>
+      <h1 class="mt-2 mb-1">Mis estadísticas</h1>
+      <p class="text-muted mb-0">
+        Resumen de tu actividad y progreso dentro de GymSync.
+      </p>
+    </section>
 
     <section v-if="error" class="stats__error">
       {{ error }}
@@ -375,23 +379,19 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.stats {
+.stats-page {
   padding: 2rem 2.5rem;
   color: var(--color-text);
 }
 
-.stats__header h1 {
-  font-size: 1.7rem;
-  margin-bottom: 0.25rem;
-}
-
-.stats__header p {
-  margin: 0;
-  color: var(--color-text-muted);
+.stats__error {
+  margin-top: 0.75rem;
+  color: #f97373;
+  font-size: 0.9rem;
 }
 
 .stats__content {
-  margin-top: 2rem;
+  margin-top: 1rem;
 }
 
 .stats__grid {

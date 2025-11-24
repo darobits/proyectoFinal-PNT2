@@ -55,6 +55,15 @@ const bottomMuscle = computed(() => {
   )
 })
 
+// 👉 máximo de sesiones para escalar las barras de músculos
+const maxMuscleSessions = computed(() => {
+  if (!byMuscle.value || byMuscle.value.length === 0) return 0
+  return byMuscle.value.reduce(
+    (max, m) => Math.max(max, m.sessions || 0),
+    0
+  )
+})
+
 // ─────────────────────────────
 // CARGAR DATOS
 // ─────────────────────────────
@@ -90,7 +99,7 @@ function buildSuggestions () {
   }
 
   // diferencia de peso
-  if (summary.value.weightDiffLast30Days !== null) {
+  if (summary.value.weightDiffLast30Days !== null && summary.value.weightDiffLast30Days !== undefined) {
     const diff = summary.value.weightDiffLast30Days
     if (diff > 1) {
       sug.push('⚖️ Aumentaste de peso este mes. Revisá tu progreso para ver tendencias.')
@@ -169,31 +178,71 @@ onMounted(() => {
     <template v-else>
       <!-- KPIs -->
       <div class="row g-3 mb-4">
+        <!-- Entrenos totales -->
         <div class="col-md-3 col-6">
           <div class="card-dark h-100 kpi-card">
-            <p class="text-muted mb-1">Entrenos totales</p>
-            <h2>{{ summary.totalWorkouts }}</h2>
+            <div class="kpi-card__top">
+              <div class="kpi-card__icon kpi-card__icon--workouts">🏋️‍♂️</div>
+              <p class="kpi-card__label">Entrenos totales</p>
+            </div>
+            <h2 class="kpi-card__value">{{ summary.totalWorkouts }}</h2>
+            <p class="kpi-card__hint">Sesiones registradas en GymSync</p>
           </div>
         </div>
 
+        <!-- Minutos acumulados -->
         <div class="col-md-3 col-6">
           <div class="card-dark h-100 kpi-card">
-            <p class="text-muted mb-1">Minutos acumulados</p>
-            <h2>{{ summary.totalMinutes }}</h2>
+            <div class="kpi-card__top">
+              <div class="kpi-card__icon kpi-card__icon--minutes">⏱️</div>
+              <p class="kpi-card__label">Minutos acumulados</p>
+            </div>
+            <h2 class="kpi-card__value">{{ summary.totalMinutes }}</h2>
+            <p class="kpi-card__hint">Tiempo total entrenando</p>
           </div>
         </div>
 
+        <!-- Promedio semanal -->
         <div class="col-md-3 col-6">
           <div class="card-dark h-100 kpi-card">
-            <p class="text-muted mb-1">Promedio semanal</p>
-            <h2>{{ summary.avgWorkoutsPerWeek }}</h2>
+            <div class="kpi-card__top">
+              <div class="kpi-card__icon kpi-card__icon--avg">📆</div>
+              <p class="kpi-card__label">Promedio semanal</p>
+            </div>
+            <h2 class="kpi-card__value">
+              {{ summary.avgWorkoutsPerWeek?.toFixed?.(1) ?? '0.0' }}
+            </h2>
+            <p class="kpi-card__hint">Entrenos por semana</p>
           </div>
         </div>
 
+        <!-- Peso actual -->
         <div class="col-md-3 col-6">
           <div class="card-dark h-100 kpi-card">
-            <p class="text-muted mb-1">Peso actual</p>
-            <h2>{{ summary.currentWeight ?? '—' }}</h2>
+            <div class="kpi-card__top">
+              <div class="kpi-card__icon kpi-card__icon--weight">⚖️</div>
+              <p class="kpi-card__label">Peso actual</p>
+            </div>
+            <h2 class="kpi-card__value">
+              {{ summary.currentWeight ?? '—' }}
+              <span v-if="summary.currentWeight">kg</span>
+            </h2>
+
+            <span
+              v-if="summary.weightDiffLast30Days !== null && summary.weightDiffLast30Days !== undefined"
+              class="kpi-chip"
+              :class="{
+                'kpi-chip--up': summary.weightDiffLast30Days > 0,
+                'kpi-chip--down': summary.weightDiffLast30Days < 0
+              }"
+            >
+              {{ summary.weightDiffLast30Days > 0 ? '+' : '' }}
+              {{ summary.weightDiffLast30Days }} kg últimos 30 días
+            </span>
+
+            <p class="kpi-card__hint" v-else>
+              Evolución de los últimos 30 días
+            </p>
           </div>
         </div>
       </div>
@@ -272,7 +321,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- SUGERENCIAS (debajo de panel + accesos rápidos) -->
+      <!-- SUGERENCIAS -->
       <div class="card-dark mb-4 suggestions-card">
         <h3 class="mb-2">Sugerencias para vos</h3>
 
@@ -288,7 +337,7 @@ onMounted(() => {
         </ul>
       </div>
 
-      <!-- ACTIVIDAD SEMANAL (como la tenías) -->
+      <!-- ACTIVIDAD SEMANAL -->
       <div class="card-dark mb-4">
         <div class="section-header">
           <h3 class="mb-1">Actividad semanal</h3>
@@ -351,10 +400,39 @@ onMounted(() => {
           No registraste grupos musculares todavía.
         </p>
 
-        <ul v-else class="text-muted muscle-list">
-          <li v-for="m in byMuscle" :key="m.muscleGroup">
-            <span class="muscle-name">{{ m.muscleGroup }}</span>
-            <span class="muscle-sessions">{{ m.sessions }} sesiones</span>
+        <!-- NUEVO DISEÑO DE LISTA -->
+        <ul v-else class="muscle-list">
+          <li
+            v-for="m in byMuscle"
+            :key="m.muscleGroup"
+            class="muscle-item"
+          >
+            <div class="muscle-left">
+              <div class="muscle-avatar">
+                <span class="muscle-avatar-icon">💪</span>
+              </div>
+              <div class="muscle-info">
+                <span class="muscle-name">{{ m.muscleGroup }}</span>
+                <span class="muscle-subtitle">Grupo objetivo</span>
+              </div>
+            </div>
+
+            <div class="muscle-right">
+              <div class="muscle-bar">
+                <div
+                  class="muscle-bar-fill"
+                  :style="{
+                    width:
+                      maxMuscleSessions === 0
+                        ? '20%'
+                        : (Math.max(m.sessions, 1) / maxMuscleSessions) * 100 + '%'
+                  }"
+                />
+              </div>
+              <span class="muscle-sessions">
+                {{ m.sessions }} {{ m.sessions === 1 ? 'sesión' : 'sesiones' }}
+              </span>
+            </div>
           </li>
         </ul>
       </div>
@@ -363,8 +441,102 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.kpi-card h2 {
+/* KPIs */
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  background: radial-gradient(circle at top right, rgba(56, 189, 248, 0.18), transparent 55%);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.kpi-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 1;
+}
+
+.kpi-card__label {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0;
+}
+
+.kpi-card__value {
+  z-index: 1;
   font-size: 1.7rem;
+  font-weight: 600;
+  margin: 0.15rem 0 0.05rem;
+}
+
+.kpi-card__hint {
+  z-index: 1;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.kpi-card__icon {
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.9);
+}
+
+.kpi-card__icon--workouts {
+  border-color: rgba(34, 197, 94, 0.7);
+}
+
+.kpi-card__icon--minutes {
+  border-color: rgba(59, 130, 246, 0.7);
+}
+
+.kpi-card__icon--avg {
+  border-color: rgba(244, 114, 182, 0.7);
+}
+
+.kpi-card__icon--weight {
+  border-color: rgba(234, 179, 8, 0.7);
+}
+
+.kpi-chip {
+  z-index: 1;
+  margin-top: 0.15rem;
+  align-self: flex-start;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  color: var(--color-text-muted);
+}
+
+.kpi-chip--up {
+  border-color: rgba(248, 113, 113, 0.8);
+  color: #fecaca;
+}
+
+.kpi-chip--down {
+  border-color: rgba(52, 211, 153, 0.8);
+  color: #bbf7d0;
 }
 
 /* PANEL ADMIN + ACCESOS RÁPIDOS */
@@ -585,30 +757,89 @@ onMounted(() => {
   transition: width 0.35s ease;
 }
 
-/* MUSCLES LIST */
+/* ───────────── MUSCLES LIST ───────────── */
 .muscle-list {
   list-style: none;
   padding-left: 0;
   margin: 0;
-}
-
-.muscle-list li {
   display: flex;
-  justify-content: space-between;
-  padding: 4px 0;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  flex-direction: column;
+  gap: 0.4rem;
 }
 
-.muscle-list li:last-child {
+.muscle-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.muscle-item:last-child {
   border-bottom: none;
+}
+
+.muscle-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.muscle-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(56, 189, 248, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+}
+
+.muscle-avatar-icon {
+  font-size: 1.2rem;
+}
+
+.muscle-info {
+  display: flex;
+  flex-direction: column;
 }
 
 .muscle-name {
   font-weight: 500;
+  color: #e5e7eb;
+}
+
+.muscle-subtitle {
+  font-size: 0.78rem;
+  color: #9ca3af;
+}
+
+.muscle-right {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 180px;
+}
+
+.muscle-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 1);
+  overflow: hidden;
+}
+
+.muscle-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+  transition: width 0.3s ease;
 }
 
 .muscle-sessions {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: #9ca3af;
 }
 

@@ -313,7 +313,7 @@ onMounted(() => {
 .field textarea {
   border-radius: 0.7rem;
   border: 1px solid rgba(148, 163, 184, 0.45);
-  background: rgba(15, 23, 42, 0.98);
+  background: rgba(42, 56, 84, 0.95);
   padding: 0.5rem 0.8rem;
   font-size: 0.9rem;
   color: #e5e7eb;
