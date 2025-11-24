@@ -1,192 +1,261 @@
+<!-- src/views/FriendsView.vue -->
 <template>
-  <div class="friends-page">
-    <h1 class="page-title">Comunidad</h1>
+  <main class="friends-page">
+    <section class="friends-card">
+      <header class="friends-header">
+        <div>
+          <h1 class="friends-title">Comunidad GymSync</h1>
+          <p class="friends-subtitle">
+            Conectate con otros usuarios, enviá solicitudes de amistad y empezá a compartir tus rutinas.
+          </p>
+        </div>
+      </header>
 
-    <div class="tabs">
-      <button
-        class="tab-btn"
-        :class="{ active: activeTab === 'search' }"
-        @click="activeTab = 'search'"
-      >
-        Buscar usuarios
-      </button>
-      <button
-        class="tab-btn"
-        :class="{ active: activeTab === 'requests' }"
-        @click="activeTab = 'requests'"
-      >
-        Solicitudes
-      </button>
-      <button
-        class="tab-btn"
-        :class="{ active: activeTab === 'friends' }"
-        @click="activeTab = 'friends'"
-      >
-        Mis amigos
-      </button>
-    </div>
-
-    <!-- BUSCAR USUARIOS -->
-    <section v-if="activeTab === 'search'" class="card">
-      <h2>Buscar usuarios</h2>
-      <div class="search-row">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Buscar por nombre o email..."
-        />
-        <button @click="searchUsers" :disabled="loadingSearch">
-          {{ loadingSearch ? 'Buscando...' : 'Buscar' }}
-        </button>
-      </div>
-
-      <p v-if="searchResults.length === 0 && searchPerformed" class="empty">
-        No se encontraron usuarios.
-      </p>
-
-      <ul v-else class="list">
-        <li
-          v-for="user in searchResults"
-          :key="user.id"
-          class="list-item"
+      <!-- TABS PRINCIPALES -->
+      <nav class="friends-tabs">
+        <button
+          class="tab-pill"
+          :class="{ 'tab-pill--active': activeTab === 'search' }"
+          @click="activeTab = 'search'"
         >
-          <div>
-            <strong>{{ user.name }}</strong>
-            <div class="muted">{{ user.email }}</div>
-          </div>
-          <div class="actions">
-            <span v-if="user.id === currentUserId" class="badge">
-              Vos
-            </span>
-            <span v-else-if="isFriend(user.id)" class="badge success">
-              Amigo
-            </span>
-            <span v-else-if="isPendingSent(user.id)" class="badge warning">
-              Pendiente
-            </span>
+          Buscar usuarios
+        </button>
+        <button
+          class="tab-pill"
+          :class="{ 'tab-pill--active': activeTab === 'requests' }"
+          @click="activeTab = 'requests'"
+        >
+          Solicitudes
+        </button>
+        <button
+          class="tab-pill"
+          :class="{ 'tab-pill--active': activeTab === 'friends' }"
+          @click="activeTab = 'friends'"
+        >
+          Mis amigos
+        </button>
+      </nav>
+
+      <div class="friends-content">
+        <!-- BUSCAR USUARIOS -->
+        <section v-if="activeTab === 'search'" class="friends-section">
+          <h2 class="section-title">Buscar usuarios</h2>
+          <p class="section-help">
+            Ingresá un nombre o email para encontrar otros atletas de GymSync.
+          </p>
+
+          <div class="search-row">
+            <input
+              v-model="searchQuery"
+              type="text"
+              class="search-input"
+              placeholder="Buscar por nombre o email..."
+            />
             <button
-              v-else
-              @click="sendFriendRequest(user.id)"
-              :disabled="loadingRequests"
+              class="primary-btn"
+              @click="searchUsers"
+              :disabled="loadingSearch"
             >
-              Agregar amigo
+              {{ loadingSearch ? 'Buscando...' : 'Buscar' }}
             </button>
           </div>
-        </li>
-      </ul>
-    </section>
 
-    <!-- SOLICITUDES -->
-    <section v-if="activeTab === 'requests'" class="card">
-      <h2>Solicitudes</h2>
-
-      <div class="subtabs">
-        <button
-          class="tab-btn small"
-          :class="{ active: activeRequestsTab === 'received' }"
-          @click="activeRequestsTab = 'received'"
-        >
-          Recibidas
-        </button>
-        <button
-          class="tab-btn small"
-          :class="{ active: activeRequestsTab === 'sent' }"
-          @click="activeRequestsTab = 'sent'"
-        >
-          Enviadas
-        </button>
-      </div>
-
-      <!-- Recibidas -->
-      <div v-if="activeRequestsTab === 'received'">
-        <p v-if="requests.received.length === 0" class="empty">
-          No tenés solicitudes pendientes.
-        </p>
-
-        <ul v-else class="list">
-          <li
-            v-for="req in requests.received"
-            :key="req.id"
-            class="list-item"
+          <p
+            v-if="searchResults.length === 0 && searchPerformed"
+            class="empty-text"
           >
-            <div>
-              <strong>{{ req.fromUser?.name || 'Usuario' }}</strong>
-              <div class="muted">
-                {{ req.fromUser?.email }}
+            No se encontraron usuarios que coincidan con tu búsqueda.
+          </p>
+
+          <ul v-else class="item-list">
+            <li
+              v-for="user in searchResults"
+              :key="user.id"
+              class="item-row"
+            >
+              <div class="item-main">
+                <div class="avatar-circle">
+                  {{ user.name?.charAt(0)?.toUpperCase() || 'U' }}
+                </div>
+                <div>
+                  <strong class="item-name">{{ user.name }}</strong>
+                  <div class="item-muted">{{ user.email }}</div>
+                </div>
               </div>
+
+              <div class="item-actions">
+                <span v-if="user.id === currentUserId" class="badge badge--soft">
+                  Vos
+                </span>
+                <span
+                  v-else-if="isFriend(user.id)"
+                  class="badge badge--success"
+                >
+                  Amigo
+                </span>
+                <span
+                  v-else-if="isPendingSent(user.id)"
+                  class="badge badge--warning"
+                >
+                  Pendiente
+                </span>
+                <button
+                  v-else
+                  class="outline-btn"
+                  @click="sendFriendRequest(user.id)"
+                  :disabled="loadingRequests"
+                >
+                  Agregar amigo
+                </button>
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <!-- SOLICITUDES -->
+        <section v-if="activeTab === 'requests'" class="friends-section">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">Solicitudes de amistad</h2>
+              <p class="section-help">
+                Aceptá o rechazá nuevas solicitudes, o revisá las que enviaste.
+              </p>
             </div>
-            <div class="actions">
+
+            <div class="subtabs">
               <button
-                class="btn-success"
-                @click="acceptRequest(req.id)"
-                :disabled="loadingRequests"
+                class="subtab-pill"
+                :class="{ 'subtab-pill--active': activeRequestsTab === 'received' }"
+                @click="activeRequestsTab = 'received'"
               >
-                Aceptar
+                Recibidas
               </button>
               <button
-                class="btn-danger"
-                @click="rejectRequest(req.id)"
-                :disabled="loadingRequests"
+                class="subtab-pill"
+                :class="{ 'subtab-pill--active': activeRequestsTab === 'sent' }"
+                @click="activeRequestsTab = 'sent'"
               >
-                Rechazar
+                Enviadas
               </button>
             </div>
-          </li>
-        </ul>
-      </div>
+          </div>
 
-      <!-- Enviadas -->
-      <div v-else>
-        <p v-if="requests.sent.length === 0" class="empty">
-          No enviaste solicitudes recientes.
-        </p>
+          <!-- Recibidas -->
+          <div v-if="activeRequestsTab === 'received'">
+            <p v-if="requests.received.length === 0" class="empty-text">
+              No tenés solicitudes pendientes por ahora.
+            </p>
 
-        <ul v-else class="list">
-          <li
-            v-for="req in requests.sent"
-            :key="req.id"
-            class="list-item"
-          >
-            <div>
-              <strong>{{ req.toUser?.name || 'Usuario' }}</strong>
-              <div class="muted">
-                {{ req.toUser?.email }}
+            <ul v-else class="item-list">
+              <li
+                v-for="req in requests.received"
+                :key="req.id"
+                class="item-row"
+              >
+                <div class="item-main">
+                  <div class="avatar-circle">
+                    {{ (req.fromUser?.name || 'U').charAt(0).toUpperCase() }}
+                  </div>
+                  <div>
+                    <strong class="item-name">
+                      {{ req.fromUser?.name || 'Usuario' }}
+                    </strong>
+                    <div class="item-muted">
+                      {{ req.fromUser?.email }}
+                    </div>
+                  </div>
+                </div>
+                <div class="item-actions">
+                  <button
+                    class="primary-btn primary-btn--small"
+                    @click="acceptRequest(req.id)"
+                    :disabled="loadingRequests"
+                  >
+                    Aceptar
+                  </button>
+                  <button
+                    class="danger-btn danger-btn--ghost"
+                    @click="rejectRequest(req.id)"
+                    :disabled="loadingRequests"
+                  >
+                    Rechazar
+                  </button>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Enviadas -->
+          <div v-else>
+            <p v-if="requests.sent.length === 0" class="empty-text">
+              No enviaste solicitudes recientemente.
+            </p>
+
+            <ul v-else class="item-list">
+              <li
+                v-for="req in requests.sent"
+                :key="req.id"
+                class="item-row"
+              >
+                <div class="item-main">
+                  <div class="avatar-circle">
+                    {{ (req.toUser?.name || 'U').charAt(0).toUpperCase() }}
+                  </div>
+                  <div>
+                    <strong class="item-name">
+                      {{ req.toUser?.name || 'Usuario' }}
+                    </strong>
+                    <div class="item-muted">
+                      {{ req.toUser?.email }}
+                    </div>
+                  </div>
+                </div>
+                <div class="item-actions">
+                  <span class="badge badge--warning">Pendiente</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- MIS AMIGOS -->
+        <section v-if="activeTab === 'friends'" class="friends-section">
+          <h2 class="section-title">Mis amigos</h2>
+          <p class="section-help">
+            Chateá con tus amigos y compartan progresos, rutinas y objetivos.
+          </p>
+
+          <p v-if="friends.length === 0" class="empty-text">
+            Todavía no tenés amigos en GymSync. Buscá usuarios y enviá solicitudes desde la pestaña
+            <strong>Buscar usuarios</strong>.
+          </p>
+
+          <ul v-else class="item-list">
+            <li
+              v-for="friend in friends"
+              :key="friend.id"
+              class="item-row"
+            >
+              <div class="item-main">
+                <div class="avatar-circle">
+                  {{ friend.name?.charAt(0)?.toUpperCase() || 'U' }}
+                </div>
+                <div>
+                  <strong class="item-name">{{ friend.name }}</strong>
+                  <div class="item-muted">{{ friend.email }}</div>
+                </div>
               </div>
-            </div>
-            <div class="actions">
-              <span class="badge warning">Pendiente</span>
-            </div>
-          </li>
-        </ul>
+              <div class="item-actions">
+                <button class="primary-btn primary-btn--ghost" @click="goToChat(friend.id)">
+                  Mensajes
+                </button>
+              </div>
+            </li>
+          </ul>
+        </section>
       </div>
     </section>
-
-    <!-- MIS AMIGOS -->
-    <section v-if="activeTab === 'friends'" class="card">
-      <h2>Mis amigos</h2>
-      <p v-if="friends.length === 0" class="empty">
-        Todavía no tenés amigos en GymSync. Buscá usuarios y enviá solicitudes.
-      </p>
-
-      <ul v-else class="list">
-        <li
-          v-for="friend in friends"
-          :key="friend.id"
-          class="list-item"
-        >
-          <div>
-            <strong>{{ friend.name }}</strong>
-            <div class="muted">{{ friend.email }}</div>
-          </div>
-          <div class="actions">
-            <button @click="goToChat(friend.id)">
-              Mensajes
-            </button>
-          </div>
-        </li>
-      </ul>
-    </section>
-  </div>
+  </main>
 </template>
 
 <script setup>
@@ -230,7 +299,7 @@ const requests = ref({
 const loadingSearch = ref(false)
 const loadingRequests = ref(false)
 
-// Helpers para estado
+// Helpers
 const isFriend = (userId) => {
   return friends.value.some(f => f.id === userId)
 }
@@ -288,7 +357,7 @@ const searchUsers = async () => {
       `/users?search=${encodeURIComponent(searchQuery.value.trim())}`,
       authConfig.value
     )
-    // filtramos admin por las dudas en mayúscula
+    // filtramos admin por las dudas
     searchResults.value = data.filter(u => u.role !== 'ADMIN')
     searchPerformed.value = true
   } catch (error) {
@@ -369,145 +438,321 @@ const goToChat = (friendId) => {
 
 <style scoped>
 .friends-page {
+  min-height: calc(100vh - 80px);
   display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem 1.5rem;
 }
 
-.page-title {
-  font-size: 1.8rem;
+.friends-card {
+  width: 100%;
+  max-width: 980px;
+  background: radial-gradient(circle at top, rgba(37, 99, 235, 0.28), transparent 55%),
+              radial-gradient(circle at bottom, rgba(16, 185, 129, 0.18), transparent 55%),
+              rgba(15, 23, 42, 0.96);
+  border-radius: 1.5rem;
+  padding: 1.8rem 2rem 2.1rem;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  color: #e5e7eb;
+}
+
+.friends-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.friends-title {
+  font-size: 1.6rem;
   font-weight: 700;
 }
 
-.tabs {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.tab-btn {
-  padding: 0.5rem 1rem;
-  border-radius: 999px;
-  border: none;
-  cursor: pointer;
-  background: #1e293b;
-  color: #e5e7eb;
+.friends-subtitle {
+  margin-top: 0.2rem;
   font-size: 0.9rem;
+  color: #a5b4fc;
 }
 
-.tab-btn.active {
-  background: #22c55e;
-  color: #0b1120;
-  font-weight: 600;
-}
-
-.tab-btn.small {
-  padding: 0.35rem 0.8rem;
-  font-size: 0.8rem;
-}
-
-.card {
+/* Tabs principales */
+.friends-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem;
+  border-radius: 999px;
   background: rgba(15, 23, 42, 0.9);
-  border-radius: 1rem;
-  padding: 1.2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(75, 85, 99, 0.9);
+  margin-bottom: 1.4rem;
 }
 
+.tab-pill {
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.tab-pill--active {
+  background: linear-gradient(135deg, #2563eb, #22c55e);
+  color: #f9fafb;
+}
+
+/* Contenido */
+.friends-content {
+  background: rgba(15, 23, 42, 0.92);
+  border-radius: 1.2rem;
+  padding: 1.3rem 1.4rem 1.5rem;
+  border: 1px solid rgba(30, 64, 175, 0.4);
+}
+
+/* Secciones */
+.friends-section + .friends-section {
+  margin-top: 1rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.section-title {
+  font-size: 1.05rem;
+  margin-bottom: 0.2rem;
+}
+
+.section-help {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+/* Subtabs (recibidas / enviadas) */
+.subtabs {
+  display: inline-flex;
+  padding: 0.15rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(55, 65, 81, 0.9);
+}
+
+.subtab-pill {
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 0.78rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.subtab-pill--active {
+  background: rgba(37, 99, 235, 0.9);
+  color: #f9fafb;
+}
+
+/* Buscador */
 .search-row {
   display: flex;
   gap: 0.75rem;
-  margin-bottom: 1rem;
+  margin: 1rem 0 0.8rem;
 }
 
-.search-row input {
+.search-input {
   flex: 1;
-  padding: 0.55rem 0.8rem;
   border-radius: 999px;
-  border: 1px solid #334155;
-  background: #020617;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(15, 23, 42, 0.95);
+  padding: 0.55rem 0.9rem;
+  font-size: 0.9rem;
   color: #e5e7eb;
 }
 
-.search-row button {
-  padding: 0.55rem 1rem;
-  border-radius: 999px;
-  border: none;
-  background: #22c55e;
-  color: #0b1120;
-  cursor: pointer;
-  font-weight: 600;
+.search-input::placeholder {
+  color: #6b7280;
 }
 
-.list {
+/* Lista / items */
+.item-list {
   list-style: none;
-  margin: 0;
   padding: 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.65rem;
 }
 
-.list-item {
+.item-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #020617;
-  border-radius: 0.75rem;
-  padding: 0.75rem 1rem;
+  gap: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.9rem;
+  background: radial-gradient(circle at top left, rgba(37, 99, 235, 0.18), transparent 55%),
+              rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(55, 65, 81, 0.7);
 }
 
-.muted {
+.item-main {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.avatar-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 30% 20%, #22c55e, #2563eb);
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f9fafb;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.9);
+}
+
+.item-name {
+  font-size: 0.95rem;
+}
+
+.item-muted {
   font-size: 0.8rem;
   color: #9ca3af;
 }
 
-.actions {
+.item-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
 }
 
-.actions button {
-  padding: 0.35rem 0.8rem;
+/* Botones / badges */
+.primary-btn {
   border-radius: 999px;
   border: none;
+  padding: 0.5rem 1.2rem;
+  background: linear-gradient(135deg, #2563eb, #22c55e);
+  color: #f9fafb;
+  font-size: 0.86rem;
+  font-weight: 600;
   cursor: pointer;
-  background: #3b82f6;
-  color: #e5e7eb;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.9);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+}
+
+.primary-btn--small {
+  padding: 0.4rem 0.9rem;
   font-size: 0.8rem;
 }
 
-.btn-success {
-  background: #22c55e !important;
-  color: #022c22 !important;
+.primary-btn--ghost {
+  background: transparent;
+  border: 1px solid rgba(56, 189, 248, 0.8);
+  box-shadow: none;
 }
 
-.btn-danger {
-  background: #ef4444 !important;
-  color: #fee2e2 !important;
+.primary-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 1);
+  filter: brightness(1.05);
+}
+
+.primary-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.outline-btn {
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.9);
+  background: transparent;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.8rem;
+  color: #e5e7eb;
+  cursor: pointer;
+}
+
+.danger-btn {
+  border-radius: 999px;
+  border: none;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.danger-btn--ghost {
+  background: transparent;
+  border: 1px solid rgba(248, 113, 113, 0.9);
+  color: #fecaca;
 }
 
 .badge {
-  padding: 0.25rem 0.6rem;
   border-radius: 999px;
+  padding: 0.22rem 0.7rem;
   font-size: 0.75rem;
-  background: #1f2937;
+  font-weight: 500;
+}
+
+.badge--soft {
+  background: rgba(148, 163, 184, 0.26);
   color: #e5e7eb;
 }
 
-.badge.success {
-  background: #16a34a;
-  color: #ecfdf5;
+.badge--success {
+  background: rgba(34, 197, 94, 0.22);
+  color: #bbf7d0;
 }
 
-.badge.warning {
-  background: #f97316;
-  color: #fff7ed;
+.badge--warning {
+  background: rgba(249, 115, 22, 0.22);
+  color: #fed7aa;
 }
 
-.empty {
+.empty-text {
+  margin-top: 0.6rem;
+  font-size: 0.86rem;
   color: #9ca3af;
-  font-size: 0.9rem;
-  margin-top: 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .friends-card {
+    padding: 1.4rem 1.2rem 1.6rem;
+  }
+
+  .friends-header {
+    flex-direction: column;
+  }
+
+  .friends-page {
+    padding: 1.5rem 1rem;
+  }
+
+  .search-row {
+    flex-direction: column;
+  }
+
+  .item-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .item-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
 }
 </style>

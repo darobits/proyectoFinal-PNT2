@@ -23,7 +23,7 @@ const form = reactive({
   currentWeight: null,
   goal: '',
   bio: '',
-  password: '' // nueva contraseña (opcional)
+  password: ''
 })
 
 const cargando = ref(false)
@@ -57,7 +57,6 @@ const guardarCambios = async () => {
   mensajeError.value = ''
   mensajeOk.value = ''
 
-  // armamos payload sin tocar email
   const payload = {
     name: form.name,
     age: form.age,
@@ -67,7 +66,6 @@ const guardarCambios = async () => {
     bio: form.bio
   }
 
-  // solo mandamos password si el usuario escribió algo
   if (form.password && form.password.trim().length > 0) {
     payload.password = form.password.trim()
   }
@@ -75,12 +73,11 @@ const guardarCambios = async () => {
   try {
     const { data } = await api.put('/users/me', payload, authConfig.value)
 
-    // Actualizamos usuarioActual en el store para que se vea el cambio abajo a la izquierda
     const token = store.state.auth.token
     store.commit('auth/setAuth', { usuario: data, token })
 
     mensajeOk.value = 'Perfil actualizado correctamente.'
-    form.password = '' // limpiamos contraseña después de guardar
+    form.password = ''
   } catch (e) {
     console.error(e)
     mensajeError.value = 'No se pudieron guardar los cambios.'
@@ -95,19 +92,33 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="perfil">
-    <section class="perfil__header-card">
-      <div class="badge">Perfil</div>
-      <h1>Tu perfil de GymSync</h1>
-      <p>
-        Estos son los datos asociados a tu cuenta. Desde aquí podés actualizar tu información
-        y cambiar tu contraseña.
-      </p>
-    </section>
+  <main class="profile-page">
+    <section class="profile-card">
+      <header class="profile-header">
+        <div class="avatar">
+          <span>
+            {{ form.name ? form.name.charAt(0).toUpperCase() : 'U' }}
+          </span>
+        </div>
+        <div class="profile-header-text">
+          <h1 class="profile-title">Tu perfil de GymSync</h1>
+          <p class="profile-subtitle">
+            Revisá tus datos personales, ajustá tus objetivos y cambiá tu contraseña cuando lo
+            necesites.
+          </p>
+        </div>
+      </header>
 
-    <section class="perfil__form-card">
-      <form class="perfil-form" @submit.prevent="guardarCambios">
-        <div class="perfil-form__row perfil-form__row--two">
+      <p v-if="cargando" class="profile-loading">
+        Cargando tu perfil...
+      </p>
+
+      <form
+        v-else
+        class="profile-form"
+        @submit.prevent="guardarCambios"
+      >
+        <div class="form-row form-row--two">
           <div class="field">
             <label>Nombre</label>
             <input v-model="form.name" type="text" required />
@@ -118,7 +129,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="perfil-form__row perfil-form__row--three">
+        <div class="form-row form-row--three">
           <div class="field">
             <label>Edad</label>
             <input v-model.number="form.age" type="number" min="0" />
@@ -133,7 +144,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="perfil-form__row">
+        <div class="form-row">
           <div class="field">
             <label>Objetivo</label>
             <input
@@ -144,7 +155,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="perfil-form__row">
+        <div class="form-row">
           <div class="field">
             <label>Bio</label>
             <textarea
@@ -155,7 +166,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="perfil-form__row">
+        <div class="form-row">
           <div class="field">
             <label>Nueva contraseña (opcional)</label>
             <div class="password-wrapper">
@@ -175,13 +186,13 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="perfil-form__messages">
+        <div class="form-messages">
           <span v-if="mensajeOk" class="msg msg--ok">{{ mensajeOk }}</span>
           <span v-if="mensajeError" class="msg msg--error">{{ mensajeError }}</span>
         </div>
 
-        <div class="perfil-form__actions">
-          <button class="btn-primary" type="submit" :disabled="guardando || cargando">
+        <div class="form-actions">
+          <button class="primary-btn" type="submit" :disabled="guardando || cargando">
             {{ guardando ? 'Guardando...' : 'Guardar cambios' }}
           </button>
         </div>
@@ -191,100 +202,132 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.perfil {
-  padding: 2rem 2.5rem;
-  color: var(--color-text);
+.profile-page {
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem 1.5rem;
 }
 
-.perfil__header-card {
-  background: rgba(15, 23, 42, 0.95);
-  border-radius: 1.2rem;
-  padding: 1.6rem 2rem;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
-  margin-bottom: 1.8rem;
+.profile-card {
+  width: 100%;
+  max-width: 820px;
+  background: radial-gradient(circle at top, rgba(37, 99, 235, 0.28), transparent 55%),
+              radial-gradient(circle at bottom, rgba(16, 185, 129, 0.18), transparent 55%),
+              rgba(15, 23, 42, 0.96);
+  border-radius: 1.5rem;
+  padding: 1.9rem 2.1rem 2.2rem;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  color: #e5e7eb;
 }
 
-.badge {
-  display: inline-flex;
-  padding: 0.18rem 0.75rem;
+/* Header con avatar */
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1.3rem;
+  margin-bottom: 1.5rem;
+}
+
+.avatar {
+  width: 88px;
+  height: 88px;
   border-radius: 999px;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.13em;
-  background: rgba(56, 189, 248, 0.12);
-  color: #38bdf8;
-  margin-bottom: 0.6rem;
+  background: radial-gradient(circle at 30% 20%, #22c55e, #2563eb);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.95);
 }
 
-.perfil__header-card h1 {
-  margin: 0 0 0.25rem;
-  font-size: 1.9rem;
+.avatar span {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #f9fafb;
 }
 
-.perfil__header-card p {
+.profile-header-text {
+  flex: 1;
+}
+
+.profile-title {
+  font-size: 1.6rem;
+  margin: 0 0 0.2rem;
+  font-weight: 700;
+}
+
+.profile-subtitle {
   margin: 0;
-  color: var(--color-text-muted);
-  max-width: 750px;
+  font-size: 0.9rem;
+  color: #a5b4fc;
 }
 
-.perfil__form-card {
+/* Loading */
+.profile-loading {
+  margin-top: 0.8rem;
+  font-size: 0.9rem;
+  color: #9ca3af;
+}
+
+/* Formulario */
+.profile-form {
+  margin-top: 0.3rem;
   background: rgba(15, 23, 42, 0.95);
-  border-radius: 1.2rem;
-  padding: 1.8rem 2rem 1.6rem;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+  border-radius: 1.1rem;
+  border: 1px solid rgba(30, 64, 175, 0.5);
+  padding: 1.4rem 1.5rem 1.5rem;
 }
 
-.perfil-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.perfil-form__row {
+.form-row {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  margin-bottom: 0.8rem;
 }
 
-.perfil-form__row--two {
-  gap: 0.75rem;
+.form-row--two {
+  flex-direction: row;
+  gap: 0.9rem;
 }
 
-.perfil-form__row--three {
-  gap: 0.75rem;
+.form-row--three {
+  flex-direction: row;
+  gap: 0.9rem;
 }
 
 .field {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 }
 
 .field label {
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
+  font-size: 0.83rem;
+  color: #9ca3af;
 }
 
 .field input,
 .field textarea {
   border-radius: 0.7rem;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  background: rgba(15, 23, 42, 0.95);
-  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(15, 23, 42, 0.98);
+  padding: 0.5rem 0.8rem;
   font-size: 0.9rem;
-  color: var(--color-text);
+  color: #e5e7eb;
 }
 
 .field input:disabled {
-  opacity: 0.7;
+  opacity: 0.65;
   cursor: not-allowed;
 }
 
+/* password */
 .password-wrapper {
   display: flex;
-  gap: 0.4rem;
+  gap: 0.45rem;
   align-items: center;
 }
 
@@ -294,32 +337,23 @@ onMounted(() => {
 
 .password-toggle {
   border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.6);
   background: transparent;
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-  padding: 0.35rem 0.7rem;
+  color: #9ca3af;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.8rem;
   cursor: pointer;
 }
 
-.perfil-form__row--two {
-  flex-direction: row;
+.password-toggle:hover {
+  border-color: #60a5fa;
+  color: #e5e7eb;
 }
 
-.perfil-form__row--two > .field {
-  flex: 1;
-}
-
-.perfil-form__row--three {
-  flex-direction: row;
-}
-
-.perfil-form__row--three > .field {
-  flex: 1;
-}
-
-.perfil-form__messages {
-  min-height: 1.2rem;
+/* mensajes */
+.form-messages {
+  min-height: 1.1rem;
+  margin-bottom: 0.3rem;
 }
 
 .msg {
@@ -331,42 +365,60 @@ onMounted(() => {
 }
 
 .msg--error {
-  color: #f97373;
+  color: #fb7185;
 }
 
-.perfil-form__actions {
-  margin-top: 0.4rem;
+/* acciones */
+.form-actions {
+  margin-top: 0.3rem;
 }
 
-.btn-primary {
+.primary-btn {
   border-radius: 999px;
   border: none;
-  padding: 0.55rem 1.4rem;
-  background: linear-gradient(135deg, #22d3ee, #0ea5e9);
-  color: #020617;
+  padding: 0.6rem 1.5rem;
+  background: linear-gradient(135deg, #2563eb, #22c55e);
+  color: #f9fafb;
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.95);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
 }
 
-.btn-primary:disabled {
+.primary-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 1);
+  filter: brightness(1.05);
+}
+
+.primary-btn:disabled {
   opacity: 0.6;
   cursor: default;
 }
 
+/* responsive */
 @media (max-width: 900px) {
-  .perfil {
-    padding: 1.2rem 1rem;
+  .profile-page {
+    padding: 1.6rem 1.1rem;
   }
 
-  .perfil__form-card,
-  .perfil__header-card {
-    padding: 1.2rem 1.2rem;
+  .profile-card {
+    padding: 1.6rem 1.4rem 1.8rem;
   }
 
-  .perfil-form__row--two,
-  .perfil-form__row--three {
+  .profile-header {
     flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .form-row--two,
+  .form-row--three {
+    flex-direction: column;
+  }
+
+  .profile-form {
+    padding: 1.1rem 1.1rem 1.3rem;
   }
 }
 </style>

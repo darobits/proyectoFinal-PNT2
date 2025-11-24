@@ -10,7 +10,7 @@ const form = reactive({
   name: '',
   email: '',
   password: '',
-  role: 'USER'
+  role: 'USER'  // siempre usuario por defecto
 })
 
 const error = ref(null)
@@ -22,16 +22,14 @@ const onSubmit = async () => {
 
   try {
     await store.dispatch('auth/register', { ...form })
-    router.push({ name: 'Login' })   // ahora sí va al login
+    router.push({ name: 'Login' })
   } catch (e) {
     error.value = e.response?.data?.error || 'Error al registrarse'
   } finally {
     loading.value = false
   }
 }
-
 </script>
-
 
 <template>
   <form @submit.prevent="onSubmit">
@@ -55,14 +53,8 @@ const onSubmit = async () => {
       />
     </div>
 
-    <div class="mb-3">
-      <label class="form-label">Rol</label>
-      <select v-model="form.role" class="form-select">
-        <option value="USER">Usuario</option>
-        <option value="COACH">Coach</option>
-      </select>
-    </div>
-
+    <!-- ⚠️ CAMPO DE ROL ELIMINADO -->
+    
     <div v-if="error" class="alert alert-danger">
       {{ error }}
     </div>

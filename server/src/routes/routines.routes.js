@@ -1,3 +1,4 @@
+//src/routes/routines.routes.js
 const express = require('express')
 const { readDb, writeDb, getNextId } = require('../db')
 const { authMiddleware } = require('../middleware/authMiddleware')
